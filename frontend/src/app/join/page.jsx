@@ -140,7 +140,7 @@ const JoinNetwork = () => {
             <FadeIn direction="right" delay={0.3} duration={0.6}>
               <AnimatedCard
                 className="border border-orange-100 h-full cursor-pointer"
-                onClick={() => handleCardClick('/join/partner')}
+                onClick={() => handleCardClick('/partner-Signup')}
                 hoverScale={1.03}
               >
                 <div className="px-6 py-8 relative z-10">
@@ -197,7 +197,7 @@ const JoinNetwork = () => {
                       <span>Collaborative opportunities</span>
                     </motion.li>
                   </ul>
-                  <AnimatedButton onClick={() => handleCardClick('/join/partner')} className="w-full">
+                  <AnimatedButton onClick={() => handleCardClick('/partner-Signup')} className="w-full">
                     Register as Partner
                   </AnimatedButton>
                 </div>

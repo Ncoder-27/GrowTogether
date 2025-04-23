@@ -221,19 +221,6 @@ const BusinessForm = () => {
                       required
                     />
 
-                    <AnimatedInput
-                      id="password"
-                      name="password"
-                      type="password"
-                      label="Password"
-                      value={formik.values.password}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      error={formik.errors.password}
-                      touched={formik.touched.password}
-                      required
-                    />
-
                     <div>
                       <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
                         Country <span className="text-red-500">*</span>
@@ -299,24 +286,27 @@ const BusinessForm = () => {
                     <div>
                       <label htmlFor="upload" className="block text-sm font-medium text-gray-700 mb-1">
                         Business Plan <span className="text-red-500">*</span>
-                        <input type="file" onChange={upload} hidden id='upload'/>
                       </label>
-                      <motion.input
-                        id="businessPlan"
-                        type='text'
-                        name="businessPlan"
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        value={formik.values.businessPlan}
-                        className={`w-full px-4 py-3 rounded-lg border ${
-                          formik.touched.businessPlan && formik.errors.businessPlan 
-                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                            : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
-                        } transition-colors duration-200`}
-                        whileFocus={{ scale: 1.01 }}
+                      <div className="flex items-center space-x-4">
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('upload').click()}
+                          className="px-4 py-2 bg-orange-500 text-white rounded-lg shadow hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        >
+                          Upload File
+                        </button>
+                        <span className="text-sm text-gray-600">
+                         {formik.values.businessPlan ?` Selected: ${formik.values.businessPlan.split('/').pop()}` : 'No file selected'}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        id="upload"
+                        hidden
+                        onChange={upload}
                       />
                       {formik.touched.businessPlan && formik.errors.businessPlan && (
-                        <motion.p 
+                        <motion.p
                           className="mt-1 text-sm text-red-600"
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -382,4 +372,4 @@ const BusinessForm = () => {
   );
 };
 
-export default BusinessForm; 
+export default BusinessForm;
