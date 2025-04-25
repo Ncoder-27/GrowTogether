@@ -31,7 +31,7 @@ const SignUp = () => {
       axios.post('http://localhost:5000/business/add', values)
         .then((result) => {
           console.log(result.data);
-          router.push('/businessForm');
+          router.push('/login');
           resetForm();
           toast.success('User created successfully!');
         }).catch((err) => {

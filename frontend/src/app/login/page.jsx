@@ -2,17 +2,60 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
-// import Layout from '@/components/Layout';
-const SignIn = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+import { useFormik } from 'formik';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import * as Yup from 'yup';
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle sign in logic here
-    console.log({ email, password, rememberMe });
-  };
+const LoginSchema = Yup.object().shape({
+  email: Yup.string().email('Invalid email').required('Email is required'),
+  password: Yup.string().required('Password is required')
+});
+
+const SignIn = () => {
+  const router = useRouter();
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loginForm = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validationSchema: LoginSchema,
+    onSubmit: async (values, { setSubmitting }) => {
+      setIsLoading(true);
+      try {
+        // Try business login first
+        const businessResponse = await axios.post('http://localhost:5000/business/authentication', values);
+        if (businessResponse.data.token) {
+          localStorage.setItem('user-token', businessResponse.data.token);
+          localStorage.setItem('user-type', 'business');
+          toast.success('Business login successful');
+          router.push('/businessForm');
+          return;
+        }
+      } catch (businessError) {
+        // If business login fails, try partner login
+        try {
+          const partnerResponse = await axios.post('http://localhost:5000/partner/authentication', values);
+          if (partnerResponse.data.token) {
+            localStorage.setItem('user-token', partnerResponse.data.token);
+            localStorage.setItem('user-type', 'partner');
+            toast.success('Partner login successful');
+            router.push('/partnerForm');
+            return;
+          }
+        } catch (partnerError) {
+          toast.error(partnerError.response?.data?.message || 'Invalid credentials');
+        }
+      } finally {
+        setIsLoading(false);
+        setSubmitting(false);
+      }
+    }
+  });
 
   return (
     <>
@@ -30,14 +73,14 @@ const SignIn = () => {
             <h2 className="mt-6 text-3xl font-bold text-gray-900">Sign in to your account</h2>
             <p className="mt-2 text-sm text-gray-600">
               Or{' '}
-              <Link href="/signup" className="font-medium text-orange-600 hover:text-orange-500">
+              <Link href="/join" className="font-medium text-orange-600 hover:text-orange-500">
                 create a new account
               </Link>
             </p>
           </div>
           
           <div className="mt-8 bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-100">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            <form className="space-y-6" onSubmit={loginForm.handleSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email address
@@ -48,11 +91,13 @@ const SignIn = () => {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={loginForm.values.email}
+                    onChange={loginForm.handleChange}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
                   />
+                  {loginForm.errors.email && loginForm.touched.email ? (
+                    <div className="text-red-500 text-sm mt-1">{loginForm.errors.email}</div>
+                  ) : null}
                 </div>
               </div>
 
@@ -66,11 +111,13 @@ const SignIn = () => {
                     name="password"
                     type="password"
                     autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={loginForm.values.password}
+                    onChange={loginForm.handleChange}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
                   />
+                  {loginForm.errors.password && loginForm.touched.password ? (
+                    <div className="text-red-500 text-sm mt-1">{loginForm.errors.password}</div>
+                  ) : null}
                 </div>
               </div>
 
@@ -90,7 +137,7 @@ const SignIn = () => {
                 </div>
 
                 <div className="text-sm">
-                  <Link href="/forgot-password" className="font-medium text-orange-600 hover:text-orange-500">
+                  <Link href="/forgetPassword" className="font-medium text-orange-600 hover:text-orange-500">
                     Forgot your password?
                   </Link>
                 </div>
@@ -99,9 +146,10 @@ const SignIn = () => {
               <div>
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-6 py-3 rounded-lg hover:shadow-lg transition-shadow duration-300"
+                  disabled={isLoading}
+                  className={`w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-6 py-3 rounded-lg hover:shadow-lg transition-shadow duration-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Sign in
+                  {isLoading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
             </form>

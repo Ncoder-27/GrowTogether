@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const PartnerModel = require('../models/partnerModel');
+const jwt = require('jsonwebtoken');
 
 // Create new partner
 router.post('/add', async (req, res) => {
@@ -14,7 +15,7 @@ router.post('/add', async (req, res) => {
 });
 
 // Get all partners
-router.get('/', async (req, res) => {
+router.get('/getall', async (req, res) => {
   try {
     const partners = await PartnerModel.find();
     res.status(200).json(partners);
@@ -57,6 +58,38 @@ router.delete('/delete/:id', async (req, res) => {
     res.status(200).json({ message: 'Partner deleted', partner: deleted });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+router.post('/authentication', async (req, res) => {
+  try {
+    const result = await PartnerModel.findOne({ email: req.body.email });
+    if (result) {
+      // In a real application, you should use bcrypt to compare passwords
+      if (result.password === req.body.password) {
+        const { _id, fullName, email } = result;
+        const payload = { _id, fullName, email, role: 'partner' };
+
+        jwt.sign(
+          payload,
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' },
+          (err, token) => {
+            if (err) {
+              res.status(500).json({ error: err.message });
+            } else {
+              res.status(200).json({ token, userType: 'partner' });
+            }
+          }
+        );
+      } else {
+        res.status(401).json({ message: 'Invalid credentials' });
+      }
+    } else {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

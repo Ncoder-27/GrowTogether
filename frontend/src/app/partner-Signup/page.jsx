@@ -27,9 +27,10 @@ const SignUp = () => {
     onSubmit: (values, {resetForm}) => {
       axios.post('http://localhost:5000/partner/add', values)
         .then((result) => {
-          router.push('/partnerForm');
-          resetForm();
+          console.log(result.data);
           toast.success('Partner account created successfully!');
+          resetForm();
+          router.push('/login');
         }).catch((err) => {
           toast.error('Error creating partner account!');
         });

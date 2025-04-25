@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const PartnerFormSchema = Yup.object().shape({
   name: Yup.string()
@@ -19,7 +20,17 @@ const PartnerFormSchema = Yup.object().shape({
   businessName: Yup.string()
     .required('Business name is required'),
   businessType: Yup.string()
-    .required('Business type is required')
+    .required('Business type is required'),
+  industry: Yup.string().required('Industry is required'),
+  businessRegNo: Yup.string().required('Business registration number is required'),
+  website: Yup.string().url('Invalid URL format'),
+  linkedin: Yup.string().url('Invalid URL format'),
+  experienceYears: Yup.number()
+    .min(0, 'Experience must be a positive number')
+    .required('Experience is required'),
+  investmentCapacity: Yup.string().required('Investment capacity is required'),
+  availability: Yup.string().required('Availability is required'),
+  helpDescription: Yup.string().required('Help description is required'),
 });
 
 const countries = [
@@ -38,6 +49,30 @@ const businessTypes = [
 const PartnerForm = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('user-token');
+    const userType = localStorage.getItem('user-type');
+
+    if (!token || userType !== 'partner') {
+      toast.error('Please login as a partner first');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      formik.setValues({
+        ...formik.values,
+        name: decoded.fullName || '',
+        email: decoded.email || ''
+      });
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      toast.error('Session expired. Please login again');
+      router.push('/login');
+    }
+  }, []);
   
   const formik = useFormik({
     initialValues: {
@@ -45,7 +80,15 @@ const PartnerForm = () => {
       email: '',
       country: '',
       businessName: '',
-      businessType: ''
+      businessType: '',
+      industry: '',
+      businessRegNo: '',
+      website: '',
+      linkedin: '',
+      experienceYears: '',
+      investmentCapacity: '',
+      availability: '',
+      helpDescription: '',
     },
     validationSchema: PartnerFormSchema,
     onSubmit: async (values) => {
@@ -71,14 +114,14 @@ const PartnerForm = () => {
       <div className="absolute -left-40 bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
       <div className="absolute right-1/4 bottom-1/4 w-40 h-40 bg-orange-100/20 rounded-full filter blur-xl -z-10"></div>
       
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mt-16 mx-auto">
         <div className="text-center mb-8">
-          <Link href="/join" className="inline-flex items-center text-orange-600 hover:text-orange-700 mb-4">
+          {/* <Link href="/join" className="inline-flex items-center text-orange-600 hover:text-orange-700 mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
             </svg>
             Back to options
-          </Link>
+          </Link> */}
           <h2 className="text-3xl font-bold text-gray-900">Partner Registration</h2>
           <p className="mt-2 text-lg text-gray-600">
             Register as a partner to collaborate with businesses
@@ -121,13 +164,15 @@ const PartnerForm = () => {
                   id="email"
                   name="email"
                   type="email"
+                  readOnly
+                  disabled
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   value={formik.values.email}
-                  className={`w-full px-4 py-3 rounded-lg border ${
+                  className={`w-full px-4 py-3 rounded-lg border bg-gray-50 cursor-not-allowed ${
                     formik.touched.email && formik.errors.email 
                       ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                      : 'border-gray-300'
                   } transition-colors duration-200`}
                 />
                 {formik.touched.email && formik.errors.email && (
@@ -229,6 +274,182 @@ const PartnerForm = () => {
                   placeholder="Describe your business and what kind of partners you're looking for..."
                 />
               </div>
+
+              <div>
+                <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
+                  Industry
+                </label>
+                <input
+                  id="industry"
+                  name="industry"
+                  type="text"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.industry}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.industry && formik.errors.industry
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.industry && formik.errors.industry && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.industry}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="businessRegNo" className="block text-sm font-medium text-gray-700 mb-1">
+                  Business Registration Number
+                </label>
+                <input
+                  id="businessRegNo"
+                  name="businessRegNo"
+                  type="text"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.businessRegNo}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.businessRegNo && formik.errors.businessRegNo
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.businessRegNo && formik.errors.businessRegNo && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.businessRegNo}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
+                  Website
+                </label>
+                <input
+                  id="website"
+                  name="website"
+                  type="url"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.website}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.website && formik.errors.website
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.website && formik.errors.website && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.website}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700 mb-1">
+                  LinkedIn Profile
+                </label>
+                <input
+                  id="linkedin"
+                  name="linkedin"
+                  type="url"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.linkedin}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.linkedin && formik.errors.linkedin
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.linkedin && formik.errors.linkedin && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.linkedin}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="experienceYears" className="block text-sm font-medium text-gray-700 mb-1">
+                  Years of Experience
+                </label>
+                <input
+                  id="experienceYears"
+                  name="experienceYears"
+                  type="number"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.experienceYears}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.experienceYears && formik.errors.experienceYears
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.experienceYears && formik.errors.experienceYears && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.experienceYears}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="investmentCapacity" className="block text-sm font-medium text-gray-700 mb-1">
+                  Investment Capacity
+                </label>
+                <input
+                  id="investmentCapacity"
+                  name="investmentCapacity"
+                  type="text"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.investmentCapacity}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.investmentCapacity && formik.errors.investmentCapacity
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.investmentCapacity && formik.errors.investmentCapacity && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.investmentCapacity}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="availability" className="block text-sm font-medium text-gray-700 mb-1">
+                  Availability
+                </label>
+                <input
+                  id="availability"
+                  name="availability"
+                  type="text"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.availability}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.availability && formik.errors.availability
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.availability && formik.errors.availability && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.availability}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="helpDescription" className="block text-sm font-medium text-gray-700 mb-1">
+                  How Can You Help
+                </label>
+                <textarea
+                  id="helpDescription"
+                  name="helpDescription"
+                  rows={4}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.helpDescription}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    formik.touched.helpDescription && formik.errors.helpDescription
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                  } transition-colors duration-200`}
+                />
+                {formik.touched.helpDescription && formik.errors.helpDescription && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.helpDescription}</p>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center">
@@ -277,4 +498,4 @@ const PartnerForm = () => {
   );
 };
 
-export default PartnerForm; 
+export default PartnerForm;

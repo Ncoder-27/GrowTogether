@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -12,6 +12,7 @@ import FadeIn from '@/components/animations/FadeIn';
 import AnimatedButton from '@/components/animations/AnimatedButton';
 import AnimatedInput from '@/components/animations/AnimatedInput';
 import AnimatedLoader from '@/components/AnimatedLoader';
+import { jwtDecode } from 'jwt-decode';
 
 const BusinessFormSchema = Yup.object().shape({
   fullName: Yup.string()
@@ -20,9 +21,6 @@ const BusinessFormSchema = Yup.object().shape({
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
-  password: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
   country: Yup.string()
     .required('Country is required'),
   businessName: Yup.string()
@@ -30,11 +28,18 @@ const BusinessFormSchema = Yup.object().shape({
   businessRegNo: Yup.string()
     .required('Business registration number is required'),
   businessPlan: Yup.string()
-    .required('Business plan is required')
+    .required('Business plan is required'),
+  website: Yup.string()
+    .url('Invalid URL format'),
+  linkedin: Yup.string()
+    .url('Invalid URL format'),
+  annualRevenue: Yup.string(),
+  expansionCountry: Yup.string(),
+  investmentBudget: Yup.string(),
 });
 
 const countries = [
-  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 
+  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany',
   'France', 'Italy', 'Spain', 'Japan', 'China', 'India', 'Brazil',
   'Mexico', 'South Africa', 'Nigeria', 'Egypt', 'Saudi Arabia', 'UAE',
   'Singapore', 'Malaysia', 'Indonesia', 'Pakistan', 'Bangladesh', 'Russia'
@@ -45,7 +50,34 @@ const BusinessForm = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formStatus, setFormStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
-  
+  const [businessId, setBusinessId] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('user-token');
+    const userType = localStorage.getItem('user-type');
+
+    if (!token || userType !== 'business') {
+      toast.error('Please login as a business first');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      formik.setValues({
+        ...formik.values,
+        fullName: decoded.fullName || '',
+        email: decoded.email || ''
+      });
+      // Store the business ID from token
+      setBusinessId(decoded._id);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      toast.error('Session expired. Please login again');
+      router.push('/login');
+    }
+  }, []);
+
   const formik = useFormik({
     initialValues: {
       fullName: '',
@@ -53,23 +85,39 @@ const BusinessForm = () => {
       country: '',
       businessName: '',
       businessRegNo: '',
-      businessPlan: ''
+      businessPlan: '',
+      website: '',
+      linkedin: '',
+      annualRevenue: '',
+      expansionCountry: '',
+      investmentBudget: '',
     },
     validationSchema: BusinessFormSchema,
     onSubmit: async (values) => {
+      if (!businessId) {
+        toast.error('Business ID not found. Please login again.');
+        router.push('/login');
+        return;
+      }
+
       setIsSubmitting(true);
       setFormStatus('loading');
       try {
-        const response = await axios.post('http://localhost:5000/business/add', values);
+        const token = localStorage.getItem('user-token');
+        const response = await axios.put(`http://localhost:5000/business/update/${businessId}`, values, {
+          headers: {
+            'x-auth-token': token
+          }
+        });
         console.log(response.data);
-        toast.success('Business registered successfully!');
+        toast.success('Business details updated successfully!');
         setFormStatus('success');
-        router.push('/')
+        router.push('/');
       } catch (error) {
         console.error(error);
         setFormStatus('error');
-        toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
-        // Reset form status after a delay
+        toast.error(error.response?.data?.message || 'Update failed. Please try again.');
+      } finally {
         setFormStatus('idle');
         setIsSubmitting(false);
       }
@@ -87,12 +135,12 @@ const BusinessForm = () => {
       }
     }
   };
-  
+
   // The item variants for individual form elements
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: {
         type: 'spring',
@@ -101,9 +149,6 @@ const BusinessForm = () => {
       }
     }
   };
-
-
-
 
   const upload = (e) => {
 
@@ -114,28 +159,26 @@ const BusinessForm = () => {
     fd.append('cloud_name', 'dzgymg2jq')
 
     axios.post('https://api.cloudinary.com/v1_1/dzgymg2jq/image/upload', fd)
-        .then((result) => {
-            toast.success('file upload successfully');
-            console.log(result.data);
-            // setPreview(result.data.url);
-            formik.setFieldValue('businessPlan', result.data.url);
+      .then((result) => {
+        toast.success('file upload successfully');
+        console.log(result.data);
+        // setPreview(result.data.url);
+        formik.setFieldValue('businessPlan', result.data.url);
 
-        }).catch((err) => {
-            console.log(err);
-            toast.error('failed to upload file');
+      }).catch((err) => {
+        console.log(err);
+        toast.error('failed to upload file');
 
-        });
-};
-
-
+      });
+  };
 
   return (
     <PageTransition>
       <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-white to-orange-50">
         {/* Decorative background elements */}
-        <motion.div 
+        <motion.div
           className="absolute -right-40 top-0 w-80 h-80 bg-orange-100/20 rounded-full filter blur-3xl -z-10"
-          animate={{ 
+          animate={{
             x: [0, 15, 0],
             y: [0, -10, 0],
           }}
@@ -145,9 +188,9 @@ const BusinessForm = () => {
             repeatType: 'mirror'
           }}
         />
-        <motion.div 
+        <motion.div
           className="absolute -left-40 bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"
-          animate={{ 
+          animate={{
             x: [0, -15, 0],
             y: [0, 10, 0],
           }}
@@ -157,7 +200,7 @@ const BusinessForm = () => {
             repeatType: 'mirror'
           }}
         />
-        
+
         <div className="max-w-3xl mt-16 mx-auto">
           <FadeIn direction="down">
             <div className="text-center mb-8">
@@ -170,13 +213,13 @@ const BusinessForm = () => {
 
           {formStatus === 'loading' || formStatus === 'success' || formStatus === 'error' ? (
             <div className="bg-white rounded-xl shadow-lg p-16 sm:p-20 border border-orange-100 flex justify-center items-center">
-              <AnimatedLoader 
-                type={formStatus === 'loading' ? 'default' : formStatus === 'success' ? 'success' : 'error'} 
-                size="lg" 
+              <AnimatedLoader
+                type={formStatus === 'loading' ? 'default' : formStatus === 'success' ? 'success' : 'error'}
+                size="lg"
                 text={
-                  formStatus === 'loading' ? 'Submitting your registration...' : 
-                  formStatus === 'success' ? 'Registration successful!' : 
-                  'Registration failed. Please try again.'
+                  formStatus === 'loading' ? 'Submitting your registration...' :
+                    formStatus === 'success' ? 'Registration successful!' :
+                      'Registration failed. Please try again.'
                 }
                 isSuccess={formStatus === 'success'}
                 isError={formStatus === 'error'}
@@ -185,8 +228,8 @@ const BusinessForm = () => {
           ) : (
             <FadeIn>
               <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 border border-orange-100">
-                <motion.form 
-                  onSubmit={formik.handleSubmit} 
+                <motion.form
+                  onSubmit={formik.handleSubmit}
                   className="space-y-6"
                   variants={containerVariants}
                   initial="hidden"
@@ -195,7 +238,7 @@ const BusinessForm = () => {
                   {/* Personal Details Section */}
                   <motion.div className="space-y-4" variants={itemVariants}>
                     <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Personal Details</h3>
-                    
+
                     <AnimatedInput
                       id="fullName"
                       name="fullName"
@@ -219,6 +262,8 @@ const BusinessForm = () => {
                       error={formik.errors.email}
                       touched={formik.touched.email}
                       required
+                      disabled={true}
+                      className="bg-gray-100"
                     />
 
                     <div>
@@ -231,11 +276,10 @@ const BusinessForm = () => {
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
                         value={formik.values.country}
-                        className={`w-full px-4 py-3 rounded-lg border ${
-                          formik.touched.country && formik.errors.country 
-                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                        className={`w-full px-4 py-3 rounded-lg border ${formik.touched.country && formik.errors.country
+                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
                             : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
-                        } transition-colors duration-200`}
+                          } transition-colors duration-200`}
                         whileFocus={{ scale: 1.01 }}
                       >
                         <option value="">Select a country</option>
@@ -244,7 +288,7 @@ const BusinessForm = () => {
                         ))}
                       </motion.select>
                       {formik.touched.country && formik.errors.country && (
-                        <motion.p 
+                        <motion.p
                           className="mt-1 text-sm text-red-600"
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -258,7 +302,7 @@ const BusinessForm = () => {
                   {/* Business Details Section */}
                   <motion.div className="space-y-4" variants={itemVariants}>
                     <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Business Details</h3>
-                    
+
                     <AnimatedInput
                       id="businessName"
                       name="businessName"
@@ -296,7 +340,7 @@ const BusinessForm = () => {
                           Upload File
                         </button>
                         <span className="text-sm text-gray-600">
-                         {formik.values.businessPlan ?` Selected: ${formik.values.businessPlan.split('/').pop()}` : 'No file selected'}
+                          {formik.values.businessPlan ? ` Selected: ${formik.values.businessPlan.split('/').pop()}` : 'No file selected'}
                         </span>
                       </div>
                       <input
@@ -315,6 +359,66 @@ const BusinessForm = () => {
                         </motion.p>
                       )}
                     </div>
+                  </motion.div>
+
+                  {/* Additional Details Section */}
+                  <motion.div className="space-y-4" variants={itemVariants}>
+                    <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Additional Details</h3>
+
+                    <AnimatedInput
+                      id="website"
+                      name="website"
+                      label="Website"
+                      value={formik.values.website}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.errors.website}
+                      touched={formik.touched.website}
+                    />
+
+                    <AnimatedInput
+                      id="linkedin"
+                      name="linkedin"
+                      label="LinkedIn Profile"
+                      value={formik.values.linkedin}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.errors.linkedin}
+                      touched={formik.touched.linkedin}
+                    />
+
+                    <AnimatedInput
+                      id="annualRevenue"
+                      name="annualRevenue"
+                      label="Annual Revenue"
+                      value={formik.values.annualRevenue}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.errors.annualRevenue}
+                      touched={formik.touched.annualRevenue}
+                    />
+
+                    <AnimatedInput
+                      id="expansionCountry"
+                      name="expansionCountry"
+                      label="Expansion Country"
+                      value={formik.values.expansionCountry}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.errors.expansionCountry}
+                      touched={formik.touched.expansionCountry}
+                    />
+
+                    <AnimatedInput
+                      id="investmentBudget"
+                      name="investmentBudget"
+                      label="Investment Budget"
+                      value={formik.values.investmentBudget}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.errors.investmentBudget}
+                      touched={formik.touched.investmentBudget}
+                    />
                   </motion.div>
 
                   <motion.div className="flex items-center" variants={itemVariants}>
