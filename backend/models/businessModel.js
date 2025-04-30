@@ -2,7 +2,7 @@ const { Schema, model } = require('../connection');
 
 const BusinessSchema = new Schema({
     fullName: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
     password: { type: String},
     country: { type: String},
     businessName: { type: String },

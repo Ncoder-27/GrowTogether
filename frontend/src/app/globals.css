@@ -24,3 +24,41 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom utility classes for extra small screens */
+@layer utilities {
+  @media (min-width: 480px) {
+    .xs\:flex-row {
+      flex-direction: row;
+    }
+    .xs\:items-center {
+      align-items: center;
+    }
+    .xs\:space-x-3 > * + * {
+      margin-left: 0.75rem;
+    }
+    .xs\:text-base {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+    .xs\:mt-6 {
+      margin-top: 1.5rem;
+    }
+    .xs\:mt-8 {
+      margin-top: 2rem;
+    }
+    .xs\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .xs\:w-auto {
+      width: auto;
+    }
+    .xs\:h-auto {
+      height: auto;
+    }
+  }
+}

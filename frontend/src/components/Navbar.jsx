@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedButton from './animations/AnimatedButton';
+import { useAppContext } from '@/context/appcontext';
 
 const NavLink = ({ href, children }) => {
   return (
@@ -45,6 +46,7 @@ const MobileNavLink = ({ href, children, onClick }) => {
 };
 
 export default function Navbar() {
+  const { isLoggedIn, userType, logout } = useAppContext();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -58,6 +60,7 @@ export default function Navbar() {
     };
 
     window.addEventListener('scroll', handleScroll);
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -97,21 +100,33 @@ export default function Navbar() {
             <NavLink href="/#results">Success Stories</NavLink>
             <NavLink href="/#contact">Contact</NavLink>
             
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Link 
-                href="/login" 
-                className="text-orange-600 font-medium hover:text-orange-700 transition-colors py-2 px-4"
+            {isLoggedIn ? (
+              <motion.button
+                onClick={logout}
+                className="text-white bg-orange-600 rounded-lg font-medium hover:text-orange-700 transition-colors py-2 px-4"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Sign In
-              </Link>
-            </motion.div>
-            
-            <AnimatedButton href="/join" variant="primary">
-              Join the Network
-            </AnimatedButton>
+                Logout
+              </motion.button>
+            ) : (
+              <>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link 
+                    href="/login" 
+                    className="text-orange-600 font-medium hover:text-orange-700 transition-colors py-2 px-4"
+                  >
+                    Sign In
+                  </Link>
+                </motion.div>
+                <AnimatedButton href="/join" variant="primary">
+                  Join the Network
+                </AnimatedButton>
+              </>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -150,10 +165,21 @@ export default function Navbar() {
               <MobileNavLink href="/#results" onClick={closeMobileMenu}>Success Stories</MobileNavLink>
               <MobileNavLink href="/#contact" onClick={closeMobileMenu}>Contact</MobileNavLink>
               <div className="border-t border-gray-200 my-3 pt-3 flex flex-col space-y-3">
-                <MobileNavLink href="/login" onClick={closeMobileMenu}>Sign In</MobileNavLink>
-                <AnimatedButton href="/join" onClick={closeMobileMenu} className="w-full">
-                  Join the Network
-                </AnimatedButton>
+                {isLoggedIn ? (
+                  <button
+                    onClick={() => { logout(); closeMobileMenu(); }}
+                    className="text-orange-600 font-medium hover:text-orange-700 transition-colors py-2 px-4 text-left"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <>
+                    <MobileNavLink href="/login" onClick={closeMobileMenu}>Sign In</MobileNavLink>
+                    <AnimatedButton href="/join" onClick={closeMobileMenu} className="w-full">
+                      Join the Network
+                    </AnimatedButton>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
@@ -161,4 +187,4 @@ export default function Navbar() {
       </AnimatePresence>
     </motion.header>
   );
-} 
+}

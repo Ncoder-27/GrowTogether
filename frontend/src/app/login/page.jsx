@@ -32,8 +32,10 @@ const SignIn = () => {
         if (businessResponse.data.token) {
           localStorage.setItem('user-token', businessResponse.data.token);
           localStorage.setItem('user-type', 'business');
+          localStorage.setItem('user-id', businessResponse.data._id); // Store the business ID
+          
           toast.success('Business login successful');
-          router.push('/businessForm');
+          router.push(`/businessForm/${businessResponse.data._id}`);
           return;
         }
       } catch (businessError) {
@@ -43,8 +45,9 @@ const SignIn = () => {
           if (partnerResponse.data.token) {
             localStorage.setItem('user-token', partnerResponse.data.token);
             localStorage.setItem('user-type', 'partner');
+            localStorage.setItem('user-id', partnerResponse.data._id); // Store the partner ID
             toast.success('Partner login successful');
-            router.push('/partnerForm');
+            router.push(`/partnerForm/${partnerResponse.data._id}`);
             return;
           }
         } catch (partnerError) {

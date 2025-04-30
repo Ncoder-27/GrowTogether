@@ -1,0 +1,347 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import PageTransition from '@/components/PageTransition';
+import FadeIn from '@/components/animations/FadeIn';
+import AnimatedInput from '@/components/animations/AnimatedInput';
+import { jwtDecode } from 'jwt-decode';
+
+const countries = [
+  'All Countries',
+  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany',
+  'France', 'Italy', 'Spain', 'Japan', 'China', 'India', 'Brazil',
+  'Singapore', 'UAE'
+];
+
+const businessTypes = [
+  'All Types',
+  'Technology', 'Finance', 'Healthcare', 'Education', 'Manufacturing',
+  'Retail', 'Transportation', 'Hospitality', 'Agriculture', 'Construction',
+  'Entertainment', 'Media', 'Consulting', 'Real Estate', 'Energy'
+];
+
+const industries = [
+  'All Industries',
+  'Software', 'Banking', 'Healthcare', 'E-commerce', 'Automotive',
+  'Aerospace', 'Telecommunications', 'Food & Beverage', 'Pharmaceuticals',
+  'Consumer Goods'
+];
+
+const investmentRanges = [
+  'All Ranges',
+  '$10,000 - $50,000',
+  '$50,000 - $100,000',
+  '$100,000 - $500,000',
+  '$500,000 - $1,000,000',
+  '$1,000,000+'
+];
+
+const BrowseBusinesses = () => {
+  const [partners, setPartners] = useState([]);
+  const [filteredPartners, setFilteredPartners] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    country: 'All Countries',
+    businessType: 'All Types',
+    industry: 'All Industries',
+    investmentCapacity: 'All Ranges'
+  });
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [connectMessage, setConnectMessage] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [partnerInfo, setPartnerInfo] = useState(null);
+
+  useEffect(() => {
+    fetchPartners();
+  }, []);
+
+  const fetchPartners = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/business/getall`);
+      setPartners(response.data); // Remove .data since the API returns the array directly
+      setFilteredPartners(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch businesses');
+      console.error('Error fetching businesses:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    filterPartners();
+  }, [searchTerm, filters, partners]);
+
+  const filterPartners = () => {
+    let filtered = [...partners];
+
+    if (searchTerm) {
+      filtered = filtered.filter(partner =>
+        partner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        partner.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        partner.businessType?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (filters.country !== 'All Countries') {
+      filtered = filtered.filter(partner => partner.country === filters.country);
+    }
+    if (filters.businessType !== 'All Types') {
+      filtered = filtered.filter(partner => partner.businessType === filters.businessType);
+    }
+    if (filters.investmentCapacity !== 'All Ranges') {
+      filtered = filtered.filter(partner => partner.investmentBudget === filters.investmentCapacity);
+    }
+
+    setFilteredPartners(filtered);
+  };
+
+  const handleFilterChange = (name, value) => {
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('user-token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setPartnerInfo({
+          name: decoded.fullName,
+          email: decoded.email
+        });
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        toast.error('Please login to connect with businesses');
+      }
+    }
+  }, []);
+
+  const handleConnect = async (business) => {
+    if (!partnerInfo) {
+      toast.error('Please login as a partner to connect with businesses');
+      router.push('/login');
+      return;
+    }
+    setSelectedBusiness(business);
+    setShowConnectModal(true);
+  };
+
+  const handleSendRequest = async () => {
+    if (!connectMessage.trim()) {
+      toast.error('Please write a message');
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/business/connect`, {
+        businessId: selectedBusiness._id,
+        partnerName: partnerInfo.name,
+        partnerEmail: partnerInfo.email,
+        message: connectMessage
+      });
+      
+      toast.success('Connection request sent successfully!');
+      setShowConnectModal(false);
+      setConnectMessage('');
+    } catch (error) {
+      console.error('Error sending connection request:', error);
+      toast.error('Failed to send connection request. Please try again.');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  return (
+    <PageTransition>
+      <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-white to-orange-50">
+        {/* Decorative elements */}
+        <div className="absolute -right-40 top-0 w-80 h-80 bg-orange-100/20 rounded-full filter blur-3xl -z-10"></div>
+        <div className="absolute -left-40 bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
+
+        <FadeIn>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Browse Businesses</h1>
+              <p className="text-lg text-gray-600">Find the perfect business for your growth</p>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="mb-8 space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="col-span-2 lg:col-span-1">
+                <AnimatedInput
+                  type="text"
+                  placeholder="Search businesses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              <select
+                value={filters.country}
+                onChange={(e) => handleFilterChange('country', e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              >
+                {countries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+
+              <select
+                value={filters.businessType}
+                onChange={(e) => handleFilterChange('businessType', e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              >
+                {businessTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+
+              <select
+                value={filters.industry}
+                onChange={(e) => handleFilterChange('industry', e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              >
+                {industries.map(industry => (
+                  <option key={industry} value={industry}>{industry}</option>
+                ))}
+              </select>
+
+              <select
+                value={filters.investmentCapacity}
+                onChange={(e) => handleFilterChange('investmentCapacity', e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              >
+                {investmentRanges.map(range => (
+                  <option key={range} value={range}>{range}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Businesses Grid */}
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPartners.map((partner) => (
+                  <motion.div
+                    key={partner._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">{partner.fullName}</h3>
+                        <p className="text-gray-600">{partner.businessName}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        {partner.linkedin && (
+                          <a
+                            href={partner.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                            </svg>
+                          </a>
+                        )}
+                        {partner.website && (
+                          <a
+                            href={partner.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-gray-700"
+                          >
+                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <p className="text-gray-600"><span className="font-semibold">Location:</span> {partner.country}</p>
+                      <p className="text-gray-600"><span className="font-semibold">Business Type:</span> {partner.businessType}</p>
+                      {/* <p className="text-gray-600"><span className="font-semibold">Business Plan:</span> {partner.businessPlan}</p> */}
+                      <p className="text-gray-600"><span className="font-semibold">Annual Revenue:</span> {partner.annualRevenue}</p>
+                      <p className="text-gray-600"><span className="font-semibold">Investment Budget:</span> {partner.investmentBudget}</p>
+                      <p className="text-gray-600"><span className="font-semibold">Expansion Country:</span> {partner.expansionCountry}</p>
+                    </div>
+
+                    <div className="mt-4">
+                      <button 
+                        onClick={() => handleConnect(partner)}
+                        className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2 rounded-lg hover:shadow-lg transition-shadow duration-300"
+                      >
+                        Connect
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {!isLoading && filteredPartners.length === 0 && (
+              <div className="text-center py-12">
+                <h3 className="text-xl text-gray-600">No businesses found matching your criteria</h3>
+              </div>
+            )}
+          </div>
+        </FadeIn>
+      </div>
+
+      {/* Connect Modal */}
+      {showConnectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl p-6 max-w-md w-full"
+          >
+            <h3 className="text-xl font-semibold mb-4">Connect with {selectedBusiness.businessName}</h3>
+            <p className="text-gray-600 mb-4">Your message will be sent to the business owner via email.</p>
+            
+            <textarea
+              value={connectMessage}
+              onChange={(e) => setConnectMessage(e.target.value)}
+              placeholder="Write your message here..."
+              className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+            
+            <div className="flex justify-end space-x-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowConnectModal(false);
+                  setConnectMessage('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendRequest}
+                disabled={isConnecting}
+                className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-lg hover:shadow-lg transition-shadow duration-300 disabled:opacity-50"
+              >
+                {isConnecting ? 'Sending...' : 'Send Request'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </PageTransition>
+  );
+};
+
+export default BrowseBusinesses;

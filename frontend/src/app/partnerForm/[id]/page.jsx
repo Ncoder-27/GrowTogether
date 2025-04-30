@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
 
 const PartnerFormSchema = Yup.object().shape({
   name: Yup.string()
@@ -49,10 +49,45 @@ const businessTypes = [
 const PartnerForm = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [partnerId, setPartnerId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+
+  const fetchPartnerDetails = async (id, token) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/partner/${id}`, {
+        headers: { 'x-auth-token': token }
+      });
+      console.log('Fetched partner data:', response.data);
+      
+      formik.setValues({
+        ...formik.values,
+        name: formik.values.name, // Keep existing name
+        email: formik.values.email, // Keep existing email
+        country: response.data.country || '',
+        businessName: response.data.businessName || '',
+        businessType: response.data.businessType || '',
+        industry: response.data.industry || '',
+        businessRegNo: response.data.businessRegNo || '',
+        website: response.data.website || '',
+        linkedin: response.data.linkedin || '',
+        experienceYears: response.data.experienceYears || '',
+        investmentCapacity: response.data.investmentCapacity || '',
+        availability: response.data.availability || '',
+        helpDescription: response.data.helpDescription || ''
+      });
+    } catch (error) {
+      console.error('Error fetching partner details:', error);
+      toast.error('Failed to load partner details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('user-token');
     const userType = localStorage.getItem('user-type');
+    const userId = localStorage.getItem('user-id');
 
     if (!token || userType !== 'partner') {
       toast.error('Please login as a partner first');
@@ -62,11 +97,17 @@ const PartnerForm = () => {
 
     try {
       const decoded = jwtDecode(token);
+      setPartnerId(decoded._id);
       formik.setValues({
         ...formik.values,
         name: decoded.fullName || '',
         email: decoded.email || ''
       });
+      
+      // Fetch partner details using ID from localStorage
+      if (userId) {
+        fetchPartnerDetails(userId, token);
+      }
     } catch (error) {
       console.error('Error decoding token:', error);
       toast.error('Session expired. Please login again');
@@ -92,15 +133,25 @@ const PartnerForm = () => {
     },
     validationSchema: PartnerFormSchema,
     onSubmit: async (values) => {
+      if (!partnerId) {
+        toast.error('Partner ID not found. Please login again.');
+        router.push('/login');
+        return;
+      }
       setIsSubmitting(true);
       try {
-        // Replace with your API endpoint for partners
-        const response = await axios.post('http://localhost:5000/partner/add', values);
-        toast.success('Partner profile registered successfully!');
-        router.push('/login');
+        const token = localStorage.getItem('user-token');
+        // Use PUT for update, with partnerId from token
+        const response = await axios.put(
+          `http://localhost:5000/partner/update/${partnerId}`,
+          values,
+          { headers: { 'x-auth-token': token } }
+        );
+        toast.success('Partner profile updated successfully!');
+        router.push('/');
       } catch (error) {
         console.error(error);
-        toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
+        toast.error(error.response?.data?.message || 'Update failed. Please try again.');
       } finally {
         setIsSubmitting(false);
       }

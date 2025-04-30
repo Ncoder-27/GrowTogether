@@ -18,7 +18,7 @@ router.post('/add', async (req, res) => {
 router.get('/getall', async (req, res) => {
   try {
     const partners = await PartnerModel.find();
-    res.status(200).json(partners);
+    res.status(200).json({ message: 'Partners retrieved successfully', data: partners });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

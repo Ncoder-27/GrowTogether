@@ -25,6 +25,8 @@ const BusinessFormSchema = Yup.object().shape({
     .required('Country is required'),
   businessName: Yup.string()
     .required('Business name is required'),
+  businessType: Yup.string()
+    .required('Business type is required'),
   businessRegNo: Yup.string()
     .required('Business registration number is required'),
   businessPlan: Yup.string()
@@ -45,16 +47,55 @@ const countries = [
   'Singapore', 'Malaysia', 'Indonesia', 'Pakistan', 'Bangladesh', 'Russia'
 ];
 
+const businessTypes = [
+  'Technology', 'Finance', 'Healthcare', 'Education', 'Manufacturing',
+  'Retail', 'Transportation', 'Hospitality', 'Agriculture', 'Construction',
+  'Entertainment', 'Media', 'Consulting', 'Real Estate', 'Energy'
+];
 
 const BusinessForm = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formStatus, setFormStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
   const [businessId, setBusinessId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchBusinessDetails = async (id, token) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/business/getbyid/${id}`, {
+        headers: { 'x-auth-token': token }
+      });
+      console.log('Fetched business data:', response.data);
+      
+      // Access the business data from response.data.data
+      const businessData = response.data.data;
+      
+      formik.setValues({
+        ...formik.values,
+        fullName: formik.values.fullName, // Keep existing fullName
+        email: formik.values.email, // Keep existing email
+        country: businessData.country || '',
+        businessName: businessData.businessName || '',
+        businessRegNo: businessData.businessRegNo || '',
+        businessPlan: businessData.businessPlan || '',
+        website: businessData.website || '',
+        linkedin: businessData.linkedin || '',
+        annualRevenue: businessData.annualRevenue || '',
+        expansionCountry: businessData.expansionCountry || '',
+        investmentBudget: businessData.investmentBudget || ''
+      });
+    } catch (error) {
+      console.error('Error fetching business details:', error);
+      toast.error('Failed to load business details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('user-token');
     const userType = localStorage.getItem('user-type');
+    const userId = localStorage.getItem('user-id');
 
     if (!token || userType !== 'business') {
       toast.error('Please login as a business first');
@@ -64,13 +105,17 @@ const BusinessForm = () => {
 
     try {
       const decoded = jwtDecode(token);
+      setBusinessId(decoded._id);
       formik.setValues({
         ...formik.values,
         fullName: decoded.fullName || '',
         email: decoded.email || ''
       });
-      // Store the business ID from token
-      setBusinessId(decoded._id);
+      
+      // Fetch business details using ID from localStorage
+      if (userId) {
+        fetchBusinessDetails(userId, token);
+      }
     } catch (error) {
       console.error('Error decoding token:', error);
       toast.error('Session expired. Please login again');
@@ -84,6 +129,7 @@ const BusinessForm = () => {
       email: '',
       country: '',
       businessName: '',
+      businessType: '', // Add businessType to initial values
       businessRegNo: '',
       businessPlan: '',
       website: '',
@@ -314,6 +360,39 @@ const BusinessForm = () => {
                       touched={formik.touched.businessName}
                       required
                     />
+
+                    <div>
+                      <label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-1">
+                        Business Type <span className="text-red-500">*</span>
+                      </label>
+                      <motion.select
+                        id="businessType"
+                        name="businessType"
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        value={formik.values.businessType}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          formik.touched.businessType && formik.errors.businessType
+                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                            : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
+                        } transition-colors duration-200`}
+                        whileFocus={{ scale: 1.01 }}
+                      >
+                        <option value="">Select a business type</option>
+                        {businessTypes.map((type) => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </motion.select>
+                      {formik.touched.businessType && formik.errors.businessType && (
+                        <motion.p
+                          className="mt-1 text-sm text-red-600"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          {formik.errors.businessType}
+                        </motion.p>
+                      )}
+                    </div>
 
                     <AnimatedInput
                       id="businessRegNo"

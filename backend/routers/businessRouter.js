@@ -3,18 +3,11 @@ const BusinessModel = require('../models/businessModel');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const verifyToken = require('../middlewares/verifyToken');
+const sendEmail = require('../utils');
 
 // Create a new business
-router.post('/add', verifyToken, async (req, res) => {
+router.post('/add', async (req, res) => {
   try {
-    const token = req.header('x-auth-token');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Check if business already exists
-    // const existingBusiness = await BusinessModel.findOne({ email: req.body.email });
-    // if (existingBusiness) {
-    //   return res.status(400).json({ message: 'Business already registered' });
-    // }
 
     const business = new BusinessModel(req.body);
     await business.save();
@@ -26,7 +19,7 @@ router.post('/add', verifyToken, async (req, res) => {
 });
 
 // Protected routes
-router.use(verifyToken);
+// router.use(verifyToken);
 
 // Get all businesses
 router.get('/getall', async (req, res) => {
@@ -42,8 +35,10 @@ router.get('/getall', async (req, res) => {
 router.get('/getbyid/:id', async (req, res) => {
   try {
     const business = await BusinessModel.findById(req.params.id);
-    if (!business) return res.status(404).json({ message: 'Business not found' });
-    res.status(200).json(business);
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+    res.status(200).json({ message: 'Business retrieved successfully', data: business });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -76,11 +71,15 @@ router.delete('/delete/:id', async (req, res) => {
 });
 
 router.post('/authentication', async (req, res) => {
+  console.log(req.body);
+  
   try {
     const result = await BusinessModel.findOne({ email: req.body.email });
     if (result) {
       if (result.password === req.body.password) {
         const { _id, fullName, email } = result;
+        console.log(result);
+        
         const payload = { _id, fullName, email, role: 'business' };
 
         jwt.sign(
@@ -91,7 +90,8 @@ router.post('/authentication', async (req, res) => {
             if (err) {
               res.status(500).json({ error: err.message });
             } else {
-              res.status(200).json({ token });
+              // Include _id in the response
+              res.status(200).json({ token, _id });
             }
           }
         );
@@ -103,6 +103,43 @@ router.post('/authentication', async (req, res) => {
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Connect with business endpoint
+router.post('/connect', async (req, res) => {
+  try {
+    const { businessId, partnerName, partnerEmail, message } = req.body;
+    const business = await BusinessModel.findById(businessId);
+    
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+
+    const emailSubject = 'New Connection Request on GrowTogether';
+    const emailMessage = `
+Dear ${business.fullName},
+
+You have received a new connection request from ${partnerName}.
+
+Partner Details:
+- Name: ${partnerName}
+- Email: ${partnerEmail}
+
+Message from partner:
+${message}
+
+You can reply directly to this email to get in touch with the partner.
+
+Best regards,
+GrowTogether Team
+    `;
+
+    await sendEmail(business.email, emailSubject, emailMessage);
+    res.status(200).json({ message: 'Connection request sent successfully' });
+  } catch (err) {
+    console.error('Error sending connection request:', err);
+    res.status(500).json({ error: 'Failed to send connection request' });
   }
 });
 
