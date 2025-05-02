@@ -25,11 +25,11 @@ router.get('/getall', async (req, res) => {
 });
 
 // Get single partner by ID
-router.get('/:id', async (req, res) => {
+router.get('/getbyid/:id', async (req, res) => {  // Fixed missing forward slash
   try {
     const partner = await PartnerModel.findById(req.params.id);
     if (!partner) return res.status(404).json({ message: 'Partner not found' });
-    res.status(200).json(partner);
+    res.status(200).json({ message: 'Partner retrieved successfully', data: partner });  // Added consistent response format
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

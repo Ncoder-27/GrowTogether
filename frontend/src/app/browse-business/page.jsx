@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 import PageTransition from '@/components/PageTransition';
 import FadeIn from '@/components/animations/FadeIn';
 import AnimatedInput from '@/components/animations/AnimatedInput';
 import { jwtDecode } from 'jwt-decode';
+import Link from 'next/link';
 
 const countries = [
   'All Countries',
@@ -15,39 +17,14 @@ const countries = [
   'Singapore', 'UAE'
 ];
 
-const businessTypes = [
-  'All Types',
-  'Technology', 'Finance', 'Healthcare', 'Education', 'Manufacturing',
-  'Retail', 'Transportation', 'Hospitality', 'Agriculture', 'Construction',
-  'Entertainment', 'Media', 'Consulting', 'Real Estate', 'Energy'
-];
-
-const industries = [
-  'All Industries',
-  'Software', 'Banking', 'Healthcare', 'E-commerce', 'Automotive',
-  'Aerospace', 'Telecommunications', 'Food & Beverage', 'Pharmaceuticals',
-  'Consumer Goods'
-];
-
-const investmentRanges = [
-  'All Ranges',
-  '$10,000 - $50,000',
-  '$50,000 - $100,000',
-  '$100,000 - $500,000',
-  '$500,000 - $1,000,000',
-  '$1,000,000+'
-];
-
 const BrowseBusinesses = () => {
-  const [partners, setPartners] = useState([]);
-  const [filteredPartners, setFilteredPartners] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
+  const [filteredBusinesses, setFilteredBusinesses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     country: 'All Countries',
-    businessType: 'All Types',
-    industry: 'All Industries',
-    investmentCapacity: 'All Ranges'
+    targetCountry: 'All Countries'
   });
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [showConnectModal, setShowConnectModal] = useState(false);
@@ -56,14 +33,23 @@ const BrowseBusinesses = () => {
   const [partnerInfo, setPartnerInfo] = useState(null);
 
   useEffect(() => {
-    fetchPartners();
+    fetchBusinesses();
   }, []);
 
-  const fetchPartners = async () => {
+  const fetchBusinesses = async () => {
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/business/getall`);
-      setPartners(response.data); // Remove .data since the API returns the array directly
-      setFilteredPartners(response.data);
+      const simplifiedBusinesses = response.data.map(business => ({
+        _id: business._id,
+        fullName: business.fullName,
+        businessName: business.businessName,
+        country: business.country,
+        expansionCountry: business.expansionCountry, // This is the target country
+        website: business.website,
+        linkedin: business.linkedin
+      }));
+      setBusinesses(simplifiedBusinesses);
+      setFilteredBusinesses(simplifiedBusinesses);
     } catch (error) {
       toast.error('Failed to fetch businesses');
       console.error('Error fetching businesses:', error);
@@ -73,31 +59,29 @@ const BrowseBusinesses = () => {
   };
 
   useEffect(() => {
-    filterPartners();
-  }, [searchTerm, filters, partners]);
+    filterBusinesses();
+  }, [searchTerm, filters, businesses]);
 
-  const filterPartners = () => {
-    let filtered = [...partners];
+  const filterBusinesses = () => {
+    let filtered = [...businesses];
 
+    // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(partner =>
-        partner.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        partner.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        partner.businessType?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(business =>
+        business.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        business.businessName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
+    // Apply dropdown filters
     if (filters.country !== 'All Countries') {
-      filtered = filtered.filter(partner => partner.country === filters.country);
+      filtered = filtered.filter(business => business.country === filters.country);
     }
-    if (filters.businessType !== 'All Types') {
-      filtered = filtered.filter(partner => partner.businessType === filters.businessType);
-    }
-    if (filters.investmentCapacity !== 'All Ranges') {
-      filtered = filtered.filter(partner => partner.investmentBudget === filters.investmentCapacity);
+    if (filters.targetCountry !== 'All Countries') {
+      filtered = filtered.filter(business => business.expansionCountry === filters.targetCountry);
     }
 
-    setFilteredPartners(filtered);
+    setFilteredBusinesses(filtered);
   };
 
   const handleFilterChange = (name, value) => {
@@ -164,15 +148,15 @@ const BrowseBusinesses = () => {
         <div className="absolute -left-40 bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
 
         <FadeIn>
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mt-10 mx-auto">
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">Browse Businesses</h1>
               <p className="text-lg text-gray-600">Find the perfect business for your growth</p>
             </div>
 
             {/* Search and Filters */}
-            <div className="mb-8 space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="col-span-2 lg:col-span-1">
+            <div className="mb-8 space-y-4 md:space-y-0 md:grid md:grid-cols-3 gap-4">
+              <div>
                 <AnimatedInput
                   type="text"
                   placeholder="Search businesses..."
@@ -187,38 +171,20 @@ const BrowseBusinesses = () => {
                 onChange={(e) => handleFilterChange('country', e.target.value)}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
-                {countries.map(country => (
+                <option value="All Countries">All Countries</option>
+                {countries.slice(1).map(country => (
                   <option key={country} value={country}>{country}</option>
                 ))}
               </select>
 
               <select
-                value={filters.businessType}
-                onChange={(e) => handleFilterChange('businessType', e.target.value)}
+                value={filters.targetCountry}
+                onChange={(e) => handleFilterChange('targetCountry', e.target.value)}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
-                {businessTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.industry}
-                onChange={(e) => handleFilterChange('industry', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              >
-                {industries.map(industry => (
-                  <option key={industry} value={industry}>{industry}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.investmentCapacity}
-                onChange={(e) => handleFilterChange('investmentCapacity', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              >
-                {investmentRanges.map(range => (
-                  <option key={range} value={range}>{range}</option>
+                <option value="All Countries">All Target Countries</option>
+                {countries.slice(1).map(country => (
+                  <option key={country} value={country}>{country}</option>
                 ))}
               </select>
             </div>
@@ -230,22 +196,22 @@ const BrowseBusinesses = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredPartners.map((partner) => (
+                {filteredBusinesses.map((business) => (
                   <motion.div
-                    key={partner._id}
+                    key={business._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900">{partner.fullName}</h3>
-                        <p className="text-gray-600">{partner.businessName}</p>
+                        <h3 className="text-xl font-semibold text-gray-900">{business.fullName}</h3>
+                        <p className="text-gray-600">{business.businessName}</p>
                       </div>
                       <div className="flex space-x-2">
-                        {partner.linkedin && (
+                        {business.linkedin && (
                           <a
-                            href={partner.linkedin}
+                            href={business.linkedin}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-700"
@@ -255,9 +221,9 @@ const BrowseBusinesses = () => {
                             </svg>
                           </a>
                         )}
-                        {partner.website && (
+                        {business.website && (
                           <a
-                            href={partner.website}
+                            href={business.website}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-gray-600 hover:text-gray-700"
@@ -271,28 +237,24 @@ const BrowseBusinesses = () => {
                     </div>
 
                     <div className="space-y-2 mb-4">
-                      <p className="text-gray-600"><span className="font-semibold">Location:</span> {partner.country}</p>
-                      <p className="text-gray-600"><span className="font-semibold">Business Type:</span> {partner.businessType}</p>
-                      {/* <p className="text-gray-600"><span className="font-semibold">Business Plan:</span> {partner.businessPlan}</p> */}
-                      <p className="text-gray-600"><span className="font-semibold">Annual Revenue:</span> {partner.annualRevenue}</p>
-                      <p className="text-gray-600"><span className="font-semibold">Investment Budget:</span> {partner.investmentBudget}</p>
-                      <p className="text-gray-600"><span className="font-semibold">Expansion Country:</span> {partner.expansionCountry}</p>
+                      <p className="text-gray-600"><span className="font-semibold">Current Location:</span> {business.country}</p>
+                      <p className="text-gray-600"><span className="font-semibold">Target Market:</span> {business.expansionCountry}</p>
                     </div>
 
                     <div className="mt-4">
-                      <button 
-                        onClick={() => handleConnect(partner)}
-                        className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2 rounded-lg hover:shadow-lg transition-shadow duration-300"
+                      <Link 
+                        href={`/view-business/${business._id}`}
+                        className="block w-full text-center bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2 rounded-lg hover:shadow-lg transition-shadow duration-300"
                       >
-                        Connect
-                      </button>
+                        View Profile
+                      </Link>
                     </div>
                   </motion.div>
                 ))}
               </div>
             )}
 
-            {!isLoading && filteredPartners.length === 0 && (
+            {!isLoading && filteredBusinesses.length === 0 && (
               <div className="text-center py-12">
                 <h3 className="text-xl text-gray-600">No businesses found matching your criteria</h3>
               </div>
@@ -302,7 +264,7 @@ const BrowseBusinesses = () => {
       </div>
 
       {/* Connect Modal */}
-      {showConnectModal && (
+      {/* {showConnectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
@@ -339,7 +301,7 @@ const BrowseBusinesses = () => {
             </div>
           </motion.div>
         </div>
-      )}
+      )} */}
     </PageTransition>
   );
 };

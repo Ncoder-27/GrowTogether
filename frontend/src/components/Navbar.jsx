@@ -60,18 +60,15 @@ export default function Navbar() {
     };
 
     window.addEventListener('scroll', handleScroll);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
+  const handleLogout = () => {
+    logout();
+    closeMobileMenu();
   };
 
   return (
@@ -95,6 +92,12 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
+            {isLoggedIn && (
+              <>
+                <NavLink href="/browse-business">Browse Business</NavLink>
+                <NavLink href="/browse-partner">Browse Partners</NavLink>
+              </>
+            )}
             <NavLink href="/#how-it-works">How It Works</NavLink>
             <NavLink href="/#services">Services</NavLink>
             <NavLink href="/#results">Success Stories</NavLink>
@@ -102,8 +105,8 @@ export default function Navbar() {
             
             {isLoggedIn ? (
               <motion.button
-                onClick={logout}
-                className="text-white bg-orange-600 rounded-lg font-medium hover:text-orange-700 transition-colors py-2 px-4"
+                onClick={handleLogout}
+                className="text-white bg-gradient-to-r from-orange-600 to-amber-600 rounded-lg font-medium py-2 px-6 hover:shadow-lg transition-all duration-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -160,15 +163,22 @@ export default function Navbar() {
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="px-4 py-3 space-y-1">
+              {isLoggedIn && (
+                <>
+                  <MobileNavLink href="/browse-business" onClick={closeMobileMenu}>Browse Business</MobileNavLink>
+                  <MobileNavLink href="/browse-partner" onClick={closeMobileMenu}>Browse Partners</MobileNavLink>
+                </>
+              )}
               <MobileNavLink href="/#how-it-works" onClick={closeMobileMenu}>How It Works</MobileNavLink>
               <MobileNavLink href="/#services" onClick={closeMobileMenu}>Services</MobileNavLink>
               <MobileNavLink href="/#results" onClick={closeMobileMenu}>Success Stories</MobileNavLink>
               <MobileNavLink href="/#contact" onClick={closeMobileMenu}>Contact</MobileNavLink>
+              
               <div className="border-t border-gray-200 my-3 pt-3 flex flex-col space-y-3">
                 {isLoggedIn ? (
                   <button
-                    onClick={() => { logout(); closeMobileMenu(); }}
-                    className="text-orange-600 font-medium hover:text-orange-700 transition-colors py-2 px-4 text-left"
+                    onClick={handleLogout}
+                    className="text-white bg-gradient-to-r from-orange-600 to-amber-600 rounded-lg font-medium py-2 px-4 hover:shadow-lg transition-all duration-300"
                   >
                     Logout
                   </button>

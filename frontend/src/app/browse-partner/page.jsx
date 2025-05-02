@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import PageTransition from '@/components/PageTransition';
 import FadeIn from '@/components/animations/FadeIn';
 import AnimatedInput from '@/components/animations/AnimatedInput';
+import Link from 'next/link';
 
 const countries = [
   'All Countries',
@@ -21,22 +22,6 @@ const businessTypes = [
   'Entertainment', 'Media', 'Consulting', 'Real Estate', 'Energy'
 ];
 
-const industries = [
-  'All Industries',
-  'Software', 'Banking', 'Healthcare', 'E-commerce', 'Automotive',
-  'Aerospace', 'Telecommunications', 'Food & Beverage', 'Pharmaceuticals',
-  'Consumer Goods'
-];
-
-const investmentRanges = [
-  'All Ranges',
-  '$10,000 - $50,000',
-  '$50,000 - $100,000',
-  '$100,000 - $500,000',
-  '$500,000 - $1,000,000',
-  '$1,000,000+'
-];
-
 const BrowsePartners = () => {
   const [partners, setPartners] = useState([]);
   const [filteredPartners, setFilteredPartners] = useState([]);
@@ -44,9 +29,7 @@ const BrowsePartners = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     country: 'All Countries',
-    businessType: 'All Types',
-    industry: 'All Industries',
-    investmentCapacity: 'All Ranges'
+    businessType: 'All Types'
   });
 
   useEffect(() => {
@@ -55,9 +38,20 @@ const BrowsePartners = () => {
 
   const fetchPartners = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/partner/getall`);
-      setPartners(response.data.data);
-      setFilteredPartners(response.data.data);
+      const response = await axios.get('http://localhost:5000/partner/getall');
+      const simplifiedPartners = response.data.data.map(partner => ({
+        _id: partner._id,
+        fullName: partner.fullName,
+        businessName: partner.businessName,
+        businessType: partner.businessType,
+        country: partner.country,
+        experienceYears: partner.experienceYears,
+        availability: partner.availability,
+        website: partner.website,
+        linkedin: partner.linkedin
+      }));
+      setPartners(simplifiedPartners);
+      setFilteredPartners(simplifiedPartners);
     } catch (error) {
       toast.error('Failed to fetch partners');
       console.error('Error fetching partners:', error);
@@ -78,7 +72,7 @@ const BrowsePartners = () => {
       filtered = filtered.filter(partner =>
         partner.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         partner.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        partner.helpDescription?.toLowerCase().includes(searchTerm.toLowerCase())
+        partner.businessType.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -88,12 +82,6 @@ const BrowsePartners = () => {
     }
     if (filters.businessType !== 'All Types') {
       filtered = filtered.filter(partner => partner.businessType === filters.businessType);
-    }
-    if (filters.industry !== 'All Industries') {
-      filtered = filtered.filter(partner => partner.industry === filters.industry);
-    }
-    if (filters.investmentCapacity !== 'All Ranges') {
-      filtered = filtered.filter(partner => partner.investmentCapacity === filters.investmentCapacity);
     }
 
     setFilteredPartners(filtered);
@@ -112,14 +100,14 @@ const BrowsePartners = () => {
 
         <FadeIn>
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
+            <div className="text-center mt-10 mb-12">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">Browse Partners</h1>
               <p className="text-lg text-gray-600">Find the perfect partner for your business growth</p>
             </div>
 
             {/* Search and Filters */}
-            <div className="mb-8 space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="col-span-2 lg:col-span-1">
+            <div className="mb-8 space-y-4 md:space-y-0 md:grid md:grid-cols-3 gap-4">
+              <div>
                 <AnimatedInput
                   type="text"
                   placeholder="Search partners..."
@@ -148,26 +136,6 @@ const BrowsePartners = () => {
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
-
-              <select
-                value={filters.industry}
-                onChange={(e) => handleFilterChange('industry', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              >
-                {industries.map(industry => (
-                  <option key={industry} value={industry}>{industry}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.investmentCapacity}
-                onChange={(e) => handleFilterChange('investmentCapacity', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              >
-                {investmentRanges.map(range => (
-                  <option key={range} value={range}>{range}</option>
-                ))}
-              </select>
             </div>
 
             {/* Partners Grid */}
@@ -186,7 +154,7 @@ const BrowsePartners = () => {
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900">{partner.fullName}</h3>
+                        <h3 className="text-xl font-semibold capitalize text-gray-900">{partner.fullName}</h3>
                         <p className="text-gray-600">{partner.businessName}</p>
                       </div>
                       <div className="flex space-x-2">
@@ -219,23 +187,18 @@ const BrowsePartners = () => {
 
                     <div className="space-y-2 mb-4">
                       <p className="text-gray-600"><span className="font-semibold">Location:</span> {partner.country}</p>
-                      <p className="text-gray-600"><span className="font-semibold">Industry:</span> {partner.industry}</p>
+                      <p className="text-gray-600"><span className="font-semibold">Business Type:</span> {partner.businessType}</p>
                       <p className="text-gray-600"><span className="font-semibold">Experience:</span> {partner.experienceYears} years</p>
-                      <p className="text-gray-600"><span className="font-semibold">Investment Capacity:</span> {partner.investmentCapacity}</p>
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <h4 className="font-semibold text-gray-900 mb-2">How I Can Help:</h4>
-                      <p className="text-gray-600 line-clamp-3">{partner.helpDescription}</p>
+                      <p className="text-gray-600"><span className="font-semibold">Availability:</span> {partner.availability}</p>
                     </div>
 
                     <div className="mt-4">
-                      <button className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2 rounded-lg hover:shadow-lg transition-shadow duration-300">
-                        Connect
-                      </button>
+                      <Link href={`/view-partner/${partner._id}`} className="block w-full text-center bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-4 py-2 rounded-lg hover:shadow-lg transition-shadow duration-300">
+                        View Profile
+                      </Link>
                     </div>
                   </motion.div>
-                ))}
+                ))}   
               </div>
             )}
 
