@@ -5,7 +5,7 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: 'http://localhost:3000'
+    origin: 'http://localhost:3001'
 }));
 app.use(express.json());
 app.use('/business', require('./routers/businessRouter'));

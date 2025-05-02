@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import * as Yup from 'yup';
+import { useAppContext } from '@/context/appcontext';
 
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email('Invalid email').required('Email is required'),
@@ -17,6 +18,7 @@ const SignIn = () => {
   const router = useRouter();
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { updateUserInfo } = useAppContext();
 
   const loginForm = useFormik({
     initialValues: {
@@ -32,8 +34,9 @@ const SignIn = () => {
         if (businessResponse.data.token) {
           localStorage.setItem('user-token', businessResponse.data.token);
           localStorage.setItem('user-type', 'business');
-          localStorage.setItem('user-id', businessResponse.data._id); // Store the business ID
+          localStorage.setItem('user-id', businessResponse.data._id);
           
+          updateUserInfo(businessResponse.data.token);
           toast.success('Business login successful');
           router.push(`/businessForm/${businessResponse.data._id}`);
           return;
@@ -45,7 +48,9 @@ const SignIn = () => {
           if (partnerResponse.data.token) {
             localStorage.setItem('user-token', partnerResponse.data.token);
             localStorage.setItem('user-type', 'partner');
-            localStorage.setItem('user-id', partnerResponse.data._id); // Store the partner ID
+            localStorage.setItem('user-id', partnerResponse.data._id);
+            
+            updateUserInfo(partnerResponse.data.token);
             toast.success('Partner login successful');
             router.push(`/partnerForm/${partnerResponse.data._id}`);
             return;

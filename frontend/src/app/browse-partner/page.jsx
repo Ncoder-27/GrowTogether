@@ -95,8 +95,8 @@ const BrowsePartners = () => {
     <PageTransition>
       <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-white to-orange-50">
         {/* Decorative elements */}
-        <div className="absolute -right-40 top-0 w-80 h-80 bg-orange-100/20 rounded-full filter blur-3xl -z-10"></div>
-        <div className="absolute -left-40 bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
+        <div className="absolute top-0 w-80 h-80 bg-orange-100/20 rounded-full filter blur-3xl -z-10"></div>
+        <div className="absolute bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
 
         <FadeIn>
           <div className="max-w-7xl mx-auto">

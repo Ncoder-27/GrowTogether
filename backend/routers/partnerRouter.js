@@ -25,11 +25,11 @@ router.get('/getall', async (req, res) => {
 });
 
 // Get single partner by ID
-router.get('/getbyid/:id', async (req, res) => {  // Fixed missing forward slash
+router.get('/getbyid/:id', async (req, res) => {
   try {
     const partner = await PartnerModel.findById(req.params.id);
     if (!partner) return res.status(404).json({ message: 'Partner not found' });
-    res.status(200).json({ message: 'Partner retrieved successfully', data: partner });  // Added consistent response format
+    res.status(200).json({ message: 'Partner retrieved successfully', data: partner });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -65,20 +65,25 @@ router.post('/authentication', async (req, res) => {
   try {
     const result = await PartnerModel.findOne({ email: req.body.email });
     if (result) {
-      // In a real application, you should use bcrypt to compare passwords
       if (result.password === req.body.password) {
         const { _id, fullName, email } = result;
         const payload = { _id, fullName, email, role: 'partner' };
 
         jwt.sign(
           payload,
-          process.env.JWT_SECRET,
-          { expiresIn: '1h' },
+          process.env.JWT_SECRET || 'your-secret-key',
+          { expiresIn: '1d' },
           (err, token) => {
             if (err) {
               res.status(500).json({ error: err.message });
             } else {
-              res.status(200).json({ token, userType: 'partner' });
+              res.status(200).json({
+                token,
+                _id,
+                fullName,
+                email,
+                userType: 'partner'
+              });
             }
           }
         );

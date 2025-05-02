@@ -8,7 +8,6 @@ const sendEmail = require('../utils');
 // Create a new business
 router.post('/add', async (req, res) => {
   try {
-
     const business = new BusinessModel(req.body);
     await business.save();
     res.status(201).json({ message: 'Business registered successfully', business });
@@ -71,27 +70,28 @@ router.delete('/delete/:id', async (req, res) => {
 });
 
 router.post('/authentication', async (req, res) => {
-  console.log(req.body);
-  
   try {
     const result = await BusinessModel.findOne({ email: req.body.email });
     if (result) {
       if (result.password === req.body.password) {
         const { _id, fullName, email } = result;
-        console.log(result);
-        
         const payload = { _id, fullName, email, role: 'business' };
 
         jwt.sign(
           payload,
-          process.env.JWT_SECRET,
+          process.env.JWT_SECRET || 'your-secret-key',
           { expiresIn: '1d' },
           (err, token) => {
             if (err) {
               res.status(500).json({ error: err.message });
             } else {
-              // Include _id in the response
-              res.status(200).json({ token, _id });
+              res.status(200).json({
+                token,
+                _id,
+                fullName,
+                email,
+                userType: 'business'
+              });
             }
           }
         );

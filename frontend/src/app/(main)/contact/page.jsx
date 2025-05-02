@@ -1,4 +1,6 @@
-export default function Contact() {
+import React from 'react';
+
+const Contact = () => {
   return (
     <section id="contact" className="relative min-h-screen flex items-center py-24 overflow-hidden bg-gradient-to-br from-white to-orange-50">
       {/* Decorative elements */}
@@ -142,3 +144,5 @@ export default function Contact() {
     </section>
   );
 } 
+
+export default Contact;

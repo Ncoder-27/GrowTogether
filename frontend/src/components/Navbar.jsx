@@ -1,52 +1,24 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import AnimatedButton from './animations/AnimatedButton';
 import { useAppContext } from '@/context/appcontext';
+import { motion } from 'framer-motion';
+import { Menu, Transition } from '@headlessui/react';
 
-const NavLink = ({ href, children }) => {
+function MobileNavLink({ href, children, onClick }) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+    <Link
+      href={href}
+      onClick={onClick}
+      className="block w-full p-2 text-base text-gray-700 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors duration-200"
     >
-      <Link 
-        href={href}
-        className="relative text-gray-600 hover:text-orange-600 transition-colors py-2 block"
-      >
-        {children}
-        <motion.span 
-          className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-full"
-          initial={{ width: 0, opacity: 0 }}
-          whileHover={{ width: '100%', opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        />
-      </Link>
-    </motion.div>
+      {children}
+    </Link>
   );
-};
-
-const MobileNavLink = ({ href, children, onClick }) => {
-  return (
-    <motion.div
-      whileHover={{ x: 5 }}
-      whileTap={{ scale: 0.95 }}
-    >
-      <Link
-        href={href}
-        className="block py-3 text-gray-600 hover:text-orange-600 transition-colors"
-        onClick={onClick}
-      >
-        {children}
-      </Link>
-    </motion.div>
-  );
-};
+}
 
 export default function Navbar() {
-  const { isLoggedIn, userType, logout } = useAppContext();
+  const { isLoggedIn, userType, userInfo, logout } = useAppContext();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -74,127 +46,207 @@ export default function Navbar() {
   return (
     <motion.header 
       className={`fixed top-0 inset-x-0 z-50 ${isScrolled ? 'bg-white/90 backdrop-blur-sm shadow-md py-3' : 'bg-transparent py-5'}`}
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: 'spring', stiffness: 50, damping: 20 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Link href="/" className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600">
-              Grow-Together
+        <nav className="relative flex items-center justify-between">
+          <div className="flex-shrink-0">
+            <Link href="/" className="flex items-center">
+              <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600">
+                Grow-Together
+              </span>
             </Link>
-          </motion.div>
+          </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex md:items-center md:space-x-8">
             {isLoggedIn && (
               <>
-                <NavLink href="/browse-business">Browse Business</NavLink>
-                <NavLink href="/browse-partner">Browse Partners</NavLink>
+                {userType === 'business' && (
+                  <Link href="/browse-partner" className="text-gray-600 hover:text-orange-600 transition-colors">
+                    Browse Partners
+                  </Link>
+                )}
+                {userType === 'partner' && (
+                  <Link href="/browse-business" className="text-gray-600 hover:text-orange-600 transition-colors">
+                    Browse Businesses
+                  </Link>
+                )}
               </>
             )}
-            <NavLink href="/#how-it-works">How It Works</NavLink>
-            <NavLink href="/#services">Services</NavLink>
-            <NavLink href="/#results">Success Stories</NavLink>
-            <NavLink href="/#contact">Contact</NavLink>
-            
+            <Link href="/#how-it-works" className="text-gray-600 hover:text-orange-600 transition-colors">
+              How It Works
+            </Link>
+            <Link href="/#services" className="text-gray-600 hover:text-orange-600 transition-colors">
+              Services
+            </Link>
+            <Link href="/#contact" className="text-gray-600 hover:text-orange-600 transition-colors">
+              Contact
+            </Link>
+          </div>
+
+          {/* User Menu / Auth Buttons */}
+          <div className="hidden md:flex md:items-center md:space-x-4">
             {isLoggedIn ? (
-              <motion.button
-                onClick={handleLogout}
-                className="text-white bg-gradient-to-r from-orange-600 to-amber-600 rounded-lg font-medium py-2 px-6 hover:shadow-lg transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Logout
-              </motion.button>
+              <Menu as="div" className="relative">
+                <Menu.Button className="flex items-center space-x-2 text-gray-700 hover:text-orange-600 transition-colors">
+                  <span className="text-sm font-medium">{userInfo?.name}</span>
+                  <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </Menu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                      <p className="text-xs text-gray-500">{userInfo?.email}</p>
+                    </div>
+                    {userType === 'business' && (
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            href={`/businessForm/${userInfo?.id}`}
+                            className={`${
+                              active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'
+                            } block px-4 py-2 text-sm`}
+                          >
+                            Business Profile
+                          </Link>
+                        )}
+                      </Menu.Item>
+                    )}
+                    {userType === 'partner' && (
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            href={`/partnerForm/${userInfo?.id}`}
+                            className={`${
+                              active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'
+                            } block px-4 py-2 text-sm`}
+                          >
+                            Partner Profile
+                          </Link>
+                        )}
+                      </Menu.Item>
+                    )}
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={handleLogout}
+                          className={`${
+                            active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'
+                          } block w-full text-left px-4 py-2 text-sm`}
+                        >
+                          Sign Out
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
             ) : (
               <>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <Link
+                  href="/login"
+                  className="text-gray-600 hover:text-orange-600 transition-colors"
                 >
-                  <Link 
-                    href="/login" 
-                    className="text-orange-600 font-medium hover:text-orange-700 transition-colors py-2 px-4"
-                  >
-                    Sign In
-                  </Link>
-                </motion.div>
-                <AnimatedButton href="/join" variant="primary">
-                  Join the Network
-                </AnimatedButton>
+                  Sign In
+                </Link>
+                <Link
+                  href="/join"
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-lg px-4 py-2 hover:shadow-lg transition-all duration-300"
+                >
+                  Join Now
+                </Link>
               </>
             )}
-          </nav>
+          </div>
 
-          {/* Mobile Menu Button */}
-          <motion.button 
-            type="button" 
-            className="md:hidden rounded-lg p-2 text-gray-600 hover:text-orange-600 focus:outline-none" 
+          {/* Mobile menu button */}
+          <button
             onClick={toggleMobileMenu}
-            aria-label="Toggle mobile menu"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            className="md:hidden rounded-lg p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 transition-colors"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className={`h-6 w-6 transition-transform duration-200 ${isMobileMenuOpen ? 'transform rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               {isMobileMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               )}
             </svg>
-          </motion.button>
-        </div>
-      </div>
+          </button>
+        </nav>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            className="md:hidden bg-white shadow-lg rounded-b-lg mx-4 overflow-hidden"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="px-4 py-3 space-y-1">
-              {isLoggedIn && (
-                <>
-                  <MobileNavLink href="/browse-business" onClick={closeMobileMenu}>Browse Business</MobileNavLink>
-                  <MobileNavLink href="/browse-partner" onClick={closeMobileMenu}>Browse Partners</MobileNavLink>
-                </>
-              )}
-              <MobileNavLink href="/#how-it-works" onClick={closeMobileMenu}>How It Works</MobileNavLink>
-              <MobileNavLink href="/#services" onClick={closeMobileMenu}>Services</MobileNavLink>
-              <MobileNavLink href="/#results" onClick={closeMobileMenu}>Success Stories</MobileNavLink>
-              <MobileNavLink href="/#contact" onClick={closeMobileMenu}>Contact</MobileNavLink>
-              
-              <div className="border-t border-gray-200 my-3 pt-3 flex flex-col space-y-3">
-                {isLoggedIn ? (
-                  <button
-                    onClick={handleLogout}
-                    className="text-white bg-gradient-to-r from-orange-600 to-amber-600 rounded-lg font-medium py-2 px-4 hover:shadow-lg transition-all duration-300"
-                  >
-                    Logout
-                  </button>
-                ) : (
+        {/* Mobile Navigation Menu */}
+        <div
+          className={`md:hidden fixed inset-x-0 top-[57px] bg-white/95 backdrop-blur-sm shadow-lg transition-all duration-200 ease-in-out transform ${
+            isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+          }`}
+        >
+          <div className="px-4 pt-2 pb-3 space-y-1">
+            {isLoggedIn && (
+              <>
+                <div className="px-3 py-2 border-b border-gray-200 mb-2">
+                  <p className="text-sm font-medium text-gray-900">{userInfo?.name}</p>
+                  <p className="text-xs text-gray-500">{userInfo?.email}</p>
+                </div>
+                {userType === 'business' && (
                   <>
-                    <MobileNavLink href="/login" onClick={closeMobileMenu}>Sign In</MobileNavLink>
-                    <AnimatedButton href="/join" onClick={closeMobileMenu} className="w-full">
-                      Join the Network
-                    </AnimatedButton>
+                    <MobileNavLink href="/browse-partner" onClick={closeMobileMenu}>Browse Partners</MobileNavLink>
+                    <MobileNavLink href={`/businessForm/${userInfo?.id}`} onClick={closeMobileMenu}>Business Profile</MobileNavLink>
                   </>
                 )}
-              </div>
+                {userType === 'partner' && (
+                  <>
+                    <MobileNavLink href="/browse-business" onClick={closeMobileMenu}>Browse Businesses</MobileNavLink>
+                    <MobileNavLink href={`/partnerForm/${userInfo?.id}`} onClick={closeMobileMenu}>Partner Profile</MobileNavLink>
+                  </>
+                )}
+              </>
+            )}
+            <MobileNavLink href="/#how-it-works" onClick={closeMobileMenu}>How It Works</MobileNavLink>
+            <MobileNavLink href="/#services" onClick={closeMobileMenu}>Services</MobileNavLink>
+            <MobileNavLink href="/#contact" onClick={closeMobileMenu}>Contact</MobileNavLink>
+            
+            <div className="border-t border-gray-200 my-3 pt-3">
+              {isLoggedIn ? (
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left text-white bg-gradient-to-r from-orange-600 to-amber-600 rounded-lg font-medium py-2 px-4 hover:shadow-lg transition-all duration-300"
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <MobileNavLink href="/login" onClick={closeMobileMenu}>Sign In</MobileNavLink>
+                  <Link
+                    href="/join"
+                    onClick={closeMobileMenu}
+                    className="block w-full text-center text-white bg-gradient-to-r from-orange-600 to-amber-600 rounded-lg font-medium py-2 px-4 hover:shadow-lg transition-all duration-300"
+                  >
+                    Join Now
+                  </Link>
+                </div>
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      </div>
     </motion.header>
   );
 }

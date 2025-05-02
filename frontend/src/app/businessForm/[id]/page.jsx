@@ -253,7 +253,7 @@ const BusinessForm = () => {
         <div className="max-w-3xl mt-16 mx-auto">
           <FadeIn direction="down">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900">Business Registration</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Business Profile</h2>
               <p className="mt-2 text-lg text-gray-600">
                 Register your business to find strategic partners
               </p>

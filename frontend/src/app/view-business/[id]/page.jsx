@@ -6,6 +6,7 @@ import PageTransition from '@/components/PageTransition';
 import FadeIn from '@/components/animations/FadeIn';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+// import React from 'react';
 
 const ViewBusiness = () => {
   const { id } = useParams();
@@ -63,8 +64,8 @@ const ViewBusiness = () => {
     <PageTransition>
       <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-white to-orange-50">
         {/* Decorative elements */}
-        <div className="absolute -right-40 top-0 w-80 h-80 bg-orange-100/20 rounded-full filter blur-3xl -z-10"></div>
-        <div className="absolute -left-40 bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
+        <div className="absolute top-0 w-80 h-80 bg-orange-100/20 rounded-full filter blur-3xl -z-10"></div>
+        <div className="absolute bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
 
         <FadeIn>
           <div className="max-w-4xl mt-10 mx-auto">
@@ -151,18 +152,21 @@ const ViewBusiness = () => {
               </div>
 
               {/* Connect Button */}
-              <div className="mt-8 flex gap-10 justify-center">
-                <button 
-                  className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-8 py-3 rounded-lg hover:shadow-lg transition-all duration-300"
-                  onClick={() => toast.success('Connection feature coming soon!')}
-                >
-                  Connect with Business
-                </button>
+              <div className="mt-8 flex gap-4 justify-center">
                 <button 
                   className="bg-gradient-to-r mailto: from-orange-600 to-amber-600 text-white font-medium px-8 py-3 rounded-lg hover:shadow-lg transition-all duration-300"
                   onClick={handleEmailClick}
                 >
                   Connect with Mail
+                </button>
+                <button 
+                  className="bg-white text-orange-600 border-2 border-orange-200 font-medium px-8 py-3 rounded-lg hover:bg-orange-50 transition-all duration-300 flex items-center"
+                  onClick={() => toast.success('Chat feature coming soon!')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  Connect with Business
                 </button>
               </div>
             </div>
