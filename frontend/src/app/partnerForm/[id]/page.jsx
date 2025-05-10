@@ -4,17 +4,14 @@ import Link from 'next/link';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-hot-toast';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 const PartnerFormSchema = Yup.object().shape({
-  name: Yup.string()
+  fullName: Yup.string()
     .min(3, 'Name must be at least 3 characters')
-    .required('Name is required'),
-  email: Yup.string()
-    .email('Invalid email address')
-    .required('Email is required'),
+    .required('Full name is required'),
   country: Yup.string()
     .required('Country is required'),
   businessName: Yup.string()
@@ -49,76 +46,14 @@ const businessTypes = [
 const PartnerForm = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formStatus, setFormStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
   const [partnerId, setPartnerId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-
-  const fetchPartnerDetails = async (id, token) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/partner/${id}`, {
-        headers: { 'x-auth-token': token }
-      });
-      console.log('Fetched partner data:', response.data);
-      
-      formik.setValues({
-        ...formik.values,
-        name: formik.values.name, // Keep existing name
-        email: formik.values.email, // Keep existing email
-        country: response.data.country || '',
-        businessName: response.data.businessName || '',
-        businessType: response.data.businessType || '',
-        industry: response.data.industry || '',
-        businessRegNo: response.data.businessRegNo || '',
-        website: response.data.website || '',
-        linkedin: response.data.linkedin || '',
-        experienceYears: response.data.experienceYears || '',
-        investmentCapacity: response.data.investmentCapacity || '',
-        availability: response.data.availability || '',
-        helpDescription: response.data.helpDescription || ''
-      });
-    } catch (error) {
-      console.error('Error fetching partner details:', error);
-      toast.error('Failed to load partner details');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('user-token');
-    const userType = localStorage.getItem('user-type');
-    const userId = localStorage.getItem('user-id');
-
-    if (!token || userType !== 'partner') {
-      toast.error('Please login as a partner first');
-      router.push('/login');
-      return;
-    }
-
-    try {
-      const decoded = jwtDecode(token);
-      setPartnerId(decoded._id);
-      formik.setValues({
-        ...formik.values,
-        name: decoded.fullName || '',
-        email: decoded.email || ''
-      });
-      
-      // Fetch partner details using ID from localStorage
-      if (userId) {
-        fetchPartnerDetails(userId, token);
-      }
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      toast.error('Session expired. Please login again');
-      router.push('/login');
-    }
-  }, []);
-  
   const formik = useFormik({
     initialValues: {
-      name: '',
-      email: '',
+      // fullName: '',
+      // email: '',
       country: '',
       businessName: '',
       businessType: '',
@@ -132,6 +67,7 @@ const PartnerForm = () => {
       helpDescription: '',
     },
     validationSchema: PartnerFormSchema,
+    enableReinitialize: true,
     onSubmit: async (values) => {
       if (!partnerId) {
         toast.error('Partner ID not found. Please login again.');
@@ -139,24 +75,94 @@ const PartnerForm = () => {
         return;
       }
       setIsSubmitting(true);
+      setFormStatus('loading');
+
+
+      
       try {
         const token = localStorage.getItem('user-token');
-        // Use PUT for update, with partnerId from token
         const response = await axios.put(
           `http://localhost:5000/partner/update/${partnerId}`,
           values,
           { headers: { 'x-auth-token': token } }
         );
+        console.log('Update response:', response.data);
         toast.success('Partner profile updated successfully!');
         router.push('/');
       } catch (error) {
-        console.error(error);
+        console.error('Update error:', error);
         toast.error(error.response?.data?.message || 'Update failed. Please try again.');
       } finally {
         setIsSubmitting(false);
       }
-    }
+    },
   });
+
+  const fetchPartnerDetails = async (id, token) => {
+    try {
+      console.log('Fetching partner details for ID:', id);
+      const response = await axios.get(`http://localhost:5000/partner/getbyid/${id}`, {
+        headers: { 'x-auth-token': token }
+      });
+      console.log('Partner details response:', response.data);
+      
+      if (response.data.data) {
+        const partnerData = response.data.data;
+        
+        // Keep token-based data (email, fullName) and merge with API data
+        const updatedValues = {
+          ...formik.values,
+          ...partnerData,
+          // Ensure token data is preserved
+          fullName: formik.values.fullName || partnerData.fullName || '',
+          email: formik.values.email || partnerData.email || '',
+        };
+        
+        console.log('Setting updated form values:', updatedValues);
+        formik.setValues(updatedValues);
+      }
+    } catch (error) {
+      console.error('Error fetching partner details:', error);
+      toast.error('Failed to load partner details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('user-token');
+    const userType = localStorage.getItem('user-type');
+
+    if (!token || userType !== 'partner') {
+      toast.error('Please login as a partner first');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      console.log('Decoded token:', decoded);
+      setPartnerId(decoded._id);
+      
+      // First set the token data
+      const tokenData = {
+        ...formik.values,
+        fullName: decoded.fullName || '',
+        email: decoded.email || ''
+      };
+      console.log('Setting initial values from token:', tokenData);
+      formik.setValues(tokenData);
+
+      // Then fetch additional details
+      if (decoded._id) {
+        fetchPartnerDetails(decoded._id, token);
+      }
+    } catch (error) {
+      console.error('Error processing token:', error);
+      toast.error('Session expired. Please login again');
+      router.push('/login');
+    }
+  }, []);
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-white to-orange-50">
@@ -167,12 +173,6 @@ const PartnerForm = () => {
       
       <div className="max-w-3xl mt-16 mx-auto">
         <div className="text-center mb-8">
-          {/* <Link href="/join" className="inline-flex items-center text-orange-600 hover:text-orange-700 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
-            </svg>
-            Back to options
-          </Link> */}
           <h2 className="text-3xl font-bold text-gray-900">Partner Registration</h2>
           <p className="mt-2 text-lg text-gray-600">
             Register as a partner to collaborate with businesses
@@ -186,24 +186,24 @@ const PartnerForm = () => {
               <h3 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">Personal Information</h3>
               
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
                 </label>
                 <input
-                  id="name"
-                  name="name"
+                  id="fullName"
+                  name="fullName"
                   type="text"
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  value={formik.values.name}
+                  value={formik.values.fullName}
                   className={`w-full px-4 py-3 rounded-lg border ${
-                    formik.touched.name && formik.errors.name 
+                    formik.touched.fullName && formik.errors.fullName 
                       ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
                       : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
                   } transition-colors duration-200`}
                 />
-                {formik.touched.name && formik.errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{formik.errors.name}</p>
+                {formik.touched.fullName && formik.errors.fullName && (
+                  <p className="mt-1 text-sm text-red-600">{formik.errors.fullName}</p>
                 )}
               </div>
 
@@ -216,19 +216,9 @@ const PartnerForm = () => {
                   name="email"
                   type="email"
                   readOnly
-                  disabled
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  value={formik.values.email}
-                  className={`w-full px-4 py-3 rounded-lg border bg-gray-50 cursor-not-allowed ${
-                    formik.touched.email && formik.errors.email 
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
-                      : 'border-gray-300'
-                  } transition-colors duration-200`}
+                  value={formik.values.email || ''}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-50 cursor-not-allowed"
                 />
-                {formik.touched.email && formik.errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{formik.errors.email}</p>
-                )}
               </div>
 
               <div>

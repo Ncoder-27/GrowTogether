@@ -15,6 +15,7 @@ const AnimatedInput = ({
   touched,
   className = '',
   required = false,
+  readOnly = false,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -57,11 +58,12 @@ const AnimatedInput = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
+          readOnly={readOnly}
           className={`w-full px-4 py-3 rounded-lg border transition-colors duration-200 ${
             hasError
               ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
               : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'
-          }`}
+          } ${readOnly ? 'cursor-not-allowed' : ''}`}
           animate={{
             borderColor: hasError 
               ? '#FCA5A5' 
@@ -103,4 +105,4 @@ const AnimatedInput = ({
   );
 };
 
-export default AnimatedInput; 
+export default AnimatedInput;

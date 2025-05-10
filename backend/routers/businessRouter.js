@@ -46,15 +46,28 @@ router.get('/getbyid/:id', async (req, res) => {
 // Update a business by ID
 router.put('/update/:id', async (req, res) => {
   try {
-    const updatedBusiness = await BusinessModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
+    const id = req.params.id;
+    const updatedData = req.body;
+    
+    console.log('Updating business:', id, updatedData);
+    
+    const business = await BusinessModel.findByIdAndUpdate(
+      id,
+      updatedData,
+      { new: true, runValidators: true }
     );
-    if (!updatedBusiness) return res.status(404).json({ message: 'Business not found' });
-    res.status(200).json({ message: 'Business updated', business: updatedBusiness });
+
+    if (!business) {
+      return res.status(404).json({ message: 'Business not found' });
+    }
+
+    res.status(200).json({
+      message: 'Business updated successfully',
+      data: business
+    });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Update error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -74,22 +87,29 @@ router.post('/authentication', async (req, res) => {
     const result = await BusinessModel.findOne({ email: req.body.email });
     if (result) {
       if (result.password === req.body.password) {
-        const { _id, fullName, email } = result;
-        const payload = { _id, fullName, email, role: 'business' };
+        const payload = {
+          _id: result._id,
+          fullName: result.fullName, // Use fullName from the database
+          email: result.email
+        };
 
+        console.log('Creating token with payload:', payload); // Debug log
+        
         jwt.sign(
           payload,
           process.env.JWT_SECRET || 'your-secret-key',
           { expiresIn: '1d' },
           (err, token) => {
             if (err) {
+              console.error('JWT Sign Error:', err);
               res.status(500).json({ error: err.message });
             } else {
               res.status(200).json({
+                message: 'Login successful',
                 token,
-                _id,
-                fullName,
-                email,
+                _id: result._id,
+                fullName: result.fullName,
+                email: result.email,
                 userType: 'business'
               });
             }
@@ -102,6 +122,7 @@ router.post('/authentication', async (req, res) => {
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (err) {
+    console.error('Authentication Error:', err);
     res.status(500).json({ error: err.message });
   }
 });

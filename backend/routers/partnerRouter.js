@@ -38,15 +38,28 @@ router.get('/getbyid/:id', async (req, res) => {  // Fixed missing forward slash
 // Update partner by ID
 router.put('/update/:id', async (req, res) => {
   try {
-    const updated = await PartnerModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
+    const id = req.params.id;
+    const updatedData = req.body;
+    
+    console.log('Updating partner:', id, updatedData);
+    
+    const partner = await PartnerModel.findByIdAndUpdate(
+      id,
+      updatedData,
+      { new: true, runValidators: true }
     );
-    if (!updated) return res.status(404).json({ message: 'Partner not found' });
-    res.status(200).json({ message: 'Partner updated', partner: updated });
+
+    if (!partner) {
+      return res.status(404).json({ message: 'Partner not found' });
+    }
+
+    res.status(200).json({
+      message: 'Partner updated successfully',
+      data: partner
+    });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Update error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -65,20 +78,32 @@ router.post('/authentication', async (req, res) => {
   try {
     const result = await PartnerModel.findOne({ email: req.body.email });
     if (result) {
-      // In a real application, you should use bcrypt to compare passwords
       if (result.password === req.body.password) {
-        const { _id, fullName, email } = result;
-        const payload = { _id, fullName, email, role: 'partner' };
+        const payload = {
+          _id: result._id,
+          fullName: result.fullName, // Use fullName from the database
+          email: result.email
+        };
 
+        console.log('Creating token with payload:', payload); // Debug log
+        
         jwt.sign(
           payload,
-          process.env.JWT_SECRET,
-          { expiresIn: '1h' },
+          process.env.JWT_SECRET || 'your-secret-key',
+          { expiresIn: '1d' },
           (err, token) => {
             if (err) {
+              console.error('JWT Sign Error:', err);
               res.status(500).json({ error: err.message });
             } else {
-              res.status(200).json({ token, userType: 'partner' });
+              res.status(200).json({
+                message: 'Login successful',
+                token,
+                _id: result._id,
+                fullName: result.fullName,
+                email: result.email,
+                userType: 'partner'
+              });
             }
           }
         );
@@ -89,6 +114,7 @@ router.post('/authentication', async (req, res) => {
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (err) {
+    console.error('Authentication Error:', err);
     res.status(500).json({ error: err.message });
   }
 });

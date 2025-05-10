@@ -24,11 +24,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 10);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -74,6 +70,9 @@ export default function Navbar() {
                     Browse Businesses
                   </Link>
                 )}
+                <Link href="/chat" className="text-gray-600 hover:text-orange-600 transition-colors">
+                  Messages
+                </Link>
               </>
             )}
             <Link href="/#how-it-works" className="text-gray-600 hover:text-orange-600 transition-colors">
@@ -91,7 +90,7 @@ export default function Navbar() {
           <div className="hidden md:flex md:items-center md:space-x-4">
             {isLoggedIn ? (
               <Menu as="div" className="relative">
-                <Menu.Button className="flex items-center space-x-2 text-gray-700 hover:text-orange-600 transition-colors">
+                <Menu.Button className="flex items-center space-x-2 bg-orange-600 px-4 py-2 rounded-lg text-white transition-colors">
                   <span className="text-sm font-medium">{userInfo?.name}</span>
                   <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -116,9 +115,7 @@ export default function Navbar() {
                         {({ active }) => (
                           <Link
                             href={`/businessForm/${userInfo?.id}`}
-                            className={`${
-                              active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'
-                            } block px-4 py-2 text-sm`}
+                            className={`${active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'} block px-4 py-2 text-sm`}
                           >
                             Business Profile
                           </Link>
@@ -130,9 +127,7 @@ export default function Navbar() {
                         {({ active }) => (
                           <Link
                             href={`/partnerForm/${userInfo?.id}`}
-                            className={`${
-                              active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'
-                            } block px-4 py-2 text-sm`}
+                            className={`${active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'} block px-4 py-2 text-sm`}
                           >
                             Partner Profile
                           </Link>
@@ -143,9 +138,7 @@ export default function Navbar() {
                       {({ active }) => (
                         <button
                           onClick={handleLogout}
-                          className={`${
-                            active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'
-                          } block w-full text-left px-4 py-2 text-sm`}
+                          className={`${active ? 'bg-gray-50 text-orange-600' : 'text-gray-700'} block w-full text-left px-4 py-2 text-sm`}
                         >
                           Sign Out
                         </button>
@@ -217,6 +210,7 @@ export default function Navbar() {
                     <MobileNavLink href={`/partnerForm/${userInfo?.id}`} onClick={closeMobileMenu}>Partner Profile</MobileNavLink>
                   </>
                 )}
+                <MobileNavLink href="/chat" onClick={closeMobileMenu}>Messages</MobileNavLink>
               </>
             )}
             <MobileNavLink href="/#how-it-works" onClick={closeMobileMenu}>How It Works</MobileNavLink>

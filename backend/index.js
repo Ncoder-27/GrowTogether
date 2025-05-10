@@ -5,11 +5,12 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: 'http://localhost:3001'
+    origin: 'http://localhost:3000'
 }));
 app.use(express.json());
 app.use('/business', require('./routers/businessRouter'));
 app.use('/partner', require('./routers/partnerRouter'));
+app.use('/chat', require('./routers/chatRouter')); // Add the chat router
 
 
 app.listen(port, () => {

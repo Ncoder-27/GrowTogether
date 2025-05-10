@@ -14,13 +14,31 @@ import AnimatedInput from '@/components/animations/AnimatedInput';
 import AnimatedLoader from '@/components/AnimatedLoader';
 import { jwtDecode } from 'jwt-decode';
 
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 }
+  }
+};
+
 const BusinessFormSchema = Yup.object().shape({
   fullName: Yup.string()
     .min(3, 'Name must be at least 3 characters')
     .required('Full name is required'),
-  email: Yup.string()
-    .email('Invalid email address')
-    .required('Email is required'),
   country: Yup.string()
     .required('Country is required'),
   businessName: Yup.string()
@@ -29,8 +47,6 @@ const BusinessFormSchema = Yup.object().shape({
     .required('Business type is required'),
   businessRegNo: Yup.string()
     .required('Business registration number is required'),
-  businessPlan: Yup.string()
-    .required('Business plan is required'),
   website: Yup.string()
     .url('Invalid URL format'),
   linkedin: Yup.string()
@@ -62,8 +78,8 @@ const BusinessForm = () => {
 
   const formik = useFormik({
     initialValues: {
-      fullName: '',
-      email: '',
+      // fullName: '',
+      // email: '',
       country: '',
       businessName: '',
       businessType: '',
@@ -86,19 +102,50 @@ const BusinessForm = () => {
 
       setIsSubmitting(true);
       setFormStatus('loading');
+      
       try {
         const token = localStorage.getItem('user-token');
-        const response = await axios.put(`http://localhost:5000/business/update/${businessId}`, values, {
-          headers: {
-            'x-auth-token': token
+        
+        // Create the submission data
+        const submissionData = {
+          // fullName: values.fullName,
+          // email: values.email,
+          country: values.country,
+          businessName: values.businessName,
+          businessType: values.businessType,
+          businessRegNo: values.businessRegNo,
+          businessPlan: values.businessPlan,
+          website: values.website || '',
+          linkedin: values.linkedin || '',
+          annualRevenue: values.annualRevenue || '',
+          expansionCountry: values.expansionCountry || '',
+          investmentBudget: values.investmentBudget || ''
+        };
+
+        console.log('Submitting data:', submissionData);
+        
+        const response = await axios.put(
+          `http://localhost:5000/business/update/${businessId}`,
+          submissionData,
+          {
+            headers: {
+              'x-auth-token': token,
+              'Content-Type': 'application/json'
+            }
           }
-        });
-        console.log(response.data);
+        );
+
+        console.log('Update response:', response.data);
         toast.success('Business details updated successfully!');
         setFormStatus('success');
-        router.push('/');
+        
+        // Short delay before redirect
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+        
       } catch (error) {
-        console.error(error);
+        console.error('Update error:', error);
         setFormStatus('error');
         toast.error(error.response?.data?.message || 'Update failed. Please try again.');
       } finally {
@@ -108,94 +155,78 @@ const BusinessForm = () => {
     }
   });
 
-  const fetchBusinessDetails = async (id, token) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/business/getbyid/${id}`, {
-        headers: { 'x-auth-token': token }
-      });
-      console.log('Fetched business data:', response.data);
-      
-      const businessData = response.data.data;
-      
-      // Update formik values with fetched data
-      formik.setValues({
-        fullName: formik.values.fullName, // Keep existing value
-        email: formik.values.email, // Keep existing value
-        country: businessData.country || '',
-        businessName: businessData.businessName || '',
-        businessType: businessData.businessType || '',
-        businessRegNo: businessData.businessRegNo || '',
-        businessPlan: businessData.businessPlan || '',
-        website: businessData.website || '',
-        linkedin: businessData.linkedin || '',
-        annualRevenue: businessData.annualRevenue || '',
-        expansionCountry: businessData.expansionCountry || '',
-        investmentBudget: businessData.investmentBudget || ''
-      });
-    } catch (error) {
-      console.error('Error fetching business details:', error);
-      toast.error('Failed to load business details');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     const token = localStorage.getItem('user-token');
     const userType = localStorage.getItem('user-type');
     const userId = localStorage.getItem('user-id');
-
+  
     if (!token || userType !== 'business') {
       toast.error('Please login as a business first');
       router.push('/login');
       return;
     }
-
+  
     try {
       const decoded = jwtDecode(token);
+      console.log('Token data:', decoded); // Debug log
       setBusinessId(decoded._id);
       
-      // Set the initial name and email from token
-      formik.setValues({
+      // Set token-based data immediately
+      const tokenData = {
         ...formik.values,
-        fullName: decoded.fullName || '',
+        fullName: decoded.fullName || '', // Try both fullName and name
         email: decoded.email || ''
-      });
-      
-      // Then fetch full business details
+      };
+      console.log('Setting initial values:', tokenData); // Debug log
+      formik.setValues(tokenData);
+
+      // Then fetch additional business details
       if (userId) {
         fetchBusinessDetails(userId, token);
+      } else if (decoded._id) {
+        fetchBusinessDetails(decoded._id, token);
       }
     } catch (error) {
-      console.error('Error decoding token:', error);
+      console.error('Error processing token:', error);
       toast.error('Session expired. Please login again');
       router.push('/login');
     }
   }, []);
+  
+  const fetchBusinessDetails = async (id, token) => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`http://localhost:5000/business/getbyid/${id}`, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      console.log('Fetched business data:', response.data);
+      const businessData = response.data.data;
 
-  // The container variants for staggered animations
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  // The item variants for individual form elements
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 10
-      }
+      // Merge existing form values with fetched data
+      const updatedValues = {
+        ...formik.values,  // Keep existing form values
+        fullName: formik.values.fullName, // Preserve token data
+        email: formik.values.email,       // Preserve token data
+        country: businessData?.country || '',
+        businessName: businessData?.businessName || '',
+        businessType: businessData?.businessType || '',
+        businessRegNo: businessData?.businessRegNo || '',
+        businessPlan: businessData?.businessPlan || '',
+        website: businessData?.website || '',
+        linkedin: businessData?.linkedin || '',
+        annualRevenue: businessData?.annualRevenue || '',
+        expansionCountry: businessData?.expansionCountry || '',
+        investmentBudget: businessData?.investmentBudget || ''
+      };
+      
+      console.log('Setting updated form values:', updatedValues);
+      formik.setValues(updatedValues);
+    } catch (error) {
+      console.error('Error fetching business details:', error);
+      toast.error('Failed to load business details');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -311,8 +342,8 @@ const BusinessForm = () => {
                       error={formik.errors.email}
                       touched={formik.touched.email}
                       required
-                      disabled={true}
-                      className="bg-gray-100"
+                      readOnly
+                      className="bg-white cursor-not-allowed"
                     />
 
                     <div>
