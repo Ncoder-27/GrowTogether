@@ -56,7 +56,7 @@ const SignUp = () => {
 
         <div className="max-w-md w-full space-y-8 relative z-10">
           <div className="text-center">
-            <h2 className="mt-6 text-3xl font-bold text-gray-900">Create your account</h2>
+            <h2 className="mt-6 text-3xl font-bold text-gray-900">Create your business account</h2>
             <p className="mt-2 text-sm text-gray-600">
               Already have an account?{' '}
               <Link href="/login" className="font-medium text-orange-600 hover:text-orange-500">

@@ -81,7 +81,7 @@ export default function Navbar() {
             <Link href="/#services" className="text-gray-600 hover:text-orange-600 transition-colors">
               Services
             </Link>
-            <Link href="/#contact" className="text-gray-600 hover:text-orange-600 transition-colors">
+            <Link href="/contact" className="text-gray-600 hover:text-orange-600 transition-colors">
               Contact
             </Link>
           </div>
