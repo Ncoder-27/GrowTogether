@@ -1,6 +1,43 @@
-import React from 'react';
+'use client';
+import React, { useState } from 'react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/contact/add', formData);
+      if (response.data.message === 'Contact message added successfully') {
+        toast.success('Message sent successfully!');
+        // Clear form
+        setFormData({
+          name: '',
+          email: '',
+          message: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('Failed to send message. Please try again.');
+    }
+  };
+
+
+  
   return (
     <section id="contact" className="relative min-h-screen flex items-center py-24 overflow-hidden bg-gradient-to-br from-white to-orange-50">
       {/* Decorative elements */}
@@ -8,7 +45,7 @@ const Contact = () => {
       <div className="absolute -left-40 bottom-0 w-80 h-80 bg-amber-100/20 rounded-full filter blur-3xl -z-10"></div>
       <div className="absolute right-1/4 bottom-1/4 w-40 h-40 bg-orange-100/20 rounded-full filter blur-xl -z-10"></div>
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
+      <d  iv className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div>
             <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-600 font-medium text-sm mb-4 inline-block">Get Started</span>
@@ -59,73 +96,46 @@ const Contact = () => {
           </div>
           
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            <form className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                  <input
-                    type="text"
-                    id="first-name"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
-                    placeholder="Enter your first name"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="last-name" className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                  <input
-                    type="text"
-                    id="last-name"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
-                    placeholder="Enter your last name"
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
+                  placeholder="Enter your full name"
+                  required
+                />
               </div>
               
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Business Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
                   id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
-                  placeholder="Enter your business email"
+                  placeholder="Enter your email"
+                  required
                 />
               </div>
               
               <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                <input
-                  type="text"
-                  id="company"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
-                  placeholder="Enter your company name"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
-                <select
-                  id="industry"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
-                >
-                  <option value="" disabled selected>Select your industry</option>
-                  <option value="technology">Technology</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="finance">Finance</option>
-                  <option value="manufacturing">Manufacturing</option>
-                  <option value="retail">Retail</option>
-                  <option value="education">Education</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              
-              <div>
-                <label htmlFor="partnership-goals" className="block text-sm font-medium text-gray-700 mb-1">Partnership Goals</label>
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message</label>
                 <textarea
-                  id="partnership-goals"
+                  id="message"
+                  name="message"
                   rows="4"
+                  value={formData.message}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200"
-                  placeholder="Describe what you're looking for in a business partner and your goals for the partnership"
+                  placeholder="How can we help you?"
+                  required
                 ></textarea>
               </div>
               
@@ -134,13 +144,13 @@ const Contact = () => {
                   type="submit"
                   className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white font-medium px-6 py-3 rounded-lg hover:shadow-lg transition-shadow duration-300"
                 >
-                  Start Connecting
+                  Send Message
                 </button>
               </div>
             </form>
           </div>
         </div>
-      </div>
+      </d>
     </section>
   );
 } 

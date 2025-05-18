@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 // Add global styles for extra small screens
 import './globals.css';
+import Navbar from '@/components/Navbar';
 
 const services = [
   {
@@ -76,6 +77,7 @@ const Home = () => {
   return (
     <>
       {/* hero section  */}
+      <Navbar/>
       <section id="hero" className="relative min-h-screen flex items-center py-16 sm:py-20 md:py-24 overflow-hidden bg-gradient-to-b from-orange-50 via-amber-50 to-white">
         {/* Background pattern */}
         <div className="absolute inset-0 -z-10 opacity-[0.15]" aria-hidden="true" style={{

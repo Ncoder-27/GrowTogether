@@ -1,6 +1,6 @@
 'use client'
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import Head from "next/head";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default function RootLayout({ children }) {
+export default function MainLayout({ children }) {
   return (
     <html lang="en">
       <Head>
@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
       >
         <AppProvider>
           <div className="flex flex-col min-h-screen text-gray-700">
-            {/* <Navbar /> */}
+            <Navbar />
             <main className="flex-grow w-full">
               <AnimatePresence mode='wait'>
                 {children}

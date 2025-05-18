@@ -14,7 +14,7 @@ router.post('/add', async (req, res) => {
 });
 
 // Get all contact messages
-router.get('/all', async (req, res) => {
+router.get('/getall', async (req, res) => {
   try {
     const messages = await ContactUs.find();
     res.status(200).json({ message: 'Contact messages retrieved successfully', data: messages });

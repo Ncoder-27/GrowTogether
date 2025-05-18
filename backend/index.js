@@ -11,6 +11,7 @@ app.use(express.json());
 app.use('/business', require('./routers/businessRouter'));
 app.use('/partner', require('./routers/partnerRouter'));
 app.use('/chat', require('./routers/chatRouter')); // Add the chat router
+app.use('/contact', require('./routers/contactusRouter')); // Add the contact router
 
 
 app.listen(port, () => {
