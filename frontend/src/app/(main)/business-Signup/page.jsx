@@ -28,7 +28,7 @@ const SignUp = () => {
     },
     onSubmit: (values, {resetForm}) => {
       console.log(values);
-      axios.post('http://localhost:5000/business/add', values)
+      axios.post(`${process.env.NEXT_PUBLIC_API_URL}/business/add`, values)
         .then((result) => {
           console.log(result.data);
           router.push('/login');

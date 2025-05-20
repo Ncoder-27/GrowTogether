@@ -38,7 +38,7 @@ const BrowsePartners = () => {
 
   const fetchPartners = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/partner/getall');
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/partner/getall`);
       const simplifiedPartners = response.data.data.map(partner => ({
         _id: partner._id,
         fullName: partner.fullName,

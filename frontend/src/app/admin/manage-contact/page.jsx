@@ -9,7 +9,7 @@ const ManageContact = () => {
 
     const fetchContacts = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/contact/getall');
+            const res = await axios.get('/contact/getall');
             setContacts(res.data.data || []);
             setLoading(false);
         } catch (error) {
@@ -22,7 +22,7 @@ const ManageContact = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this contact submission?')) {
             try {
-                await axios.delete(`http://localhost:5000/contact/delete/${id}`);
+                await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/contact/delete/${id}`);
                 toast.success('Contact deleted successfully');
                 fetchContacts(); // Refresh the list after deletion
             } catch (error) {

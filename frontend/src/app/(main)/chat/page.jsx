@@ -45,7 +45,7 @@ const ChatPage = () => {
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io(`${process.env.NEXT_PUBLIC_API_URL}`);
     setSocket(newSocket);
 
     // Set user as online
@@ -205,7 +205,7 @@ const ChatPage = () => {
 
   const fetchContacts = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/chat/contacts/${userInfo.id}`);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/chat/contacts/${userInfo.id}`);
       const backendContacts = response.data.data || [];
 
       setContacts(backendContacts);
@@ -241,7 +241,7 @@ const ChatPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:5000/chat/messages/${userInfo.id}/${selectedContact.id}`
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/messages/${userInfo.id}/${selectedContact.id}`
       );
       setMessages(response.data.data || []);
     } catch (error) {
@@ -317,7 +317,7 @@ const ChatPage = () => {
     
     try {
       setDeletingContact(contactId);
-      await axios.delete(`http://localhost:5000/chat/contact/${userInfo.id}/${contactId}`);
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/chat/contact/${userInfo.id}/${contactId}`);
       
       // Remove contact from state
       setContacts(prev => prev.filter(c => c.id !== contactId));

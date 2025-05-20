@@ -7,7 +7,7 @@ const ManagePartner = () => {
     const [partner, setPartner] = React.useState([]);
     const [loading, setLoading] = React.useState(true);    const fetchpartner = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/partner/getall');
+            const res = await axios.get('/partner/getall');
             console.log(res.data.data);
             setPartner(res.data.data || []); // Access the nested data property and provide a default empty array
             setLoading(false);
@@ -21,7 +21,7 @@ const ManagePartner = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this partner?')) {
             try {
-                await axios.delete(`http://localhost:5000/partner/delete/${id}`);
+                await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/partner/delete/${id}`);
                 toast.success('Partner deleted successfully');
                 fetchpartner(); // Refresh the list after deletion
             } catch (error) {

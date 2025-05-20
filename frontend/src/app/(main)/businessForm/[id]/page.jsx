@@ -125,7 +125,7 @@ const BusinessForm = () => {
         console.log('Submitting data:', submissionData);
         
         const response = await axios.put(
-          `http://localhost:5000/business/update/${businessId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/business/update/${businessId}`,
           submissionData,
           {
             headers: {
@@ -196,7 +196,7 @@ const BusinessForm = () => {
   const fetchBusinessDetails = async (id, token) => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/business/getbyid/${id}`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/business/getbyid/${id}`, {
         headers: { 'x-auth-token': token }
       });
       

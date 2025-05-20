@@ -82,7 +82,7 @@ const PartnerForm = () => {
       try {
         const token = localStorage.getItem('user-token');
         const response = await axios.put(
-          `http://localhost:5000/partner/update/${partnerId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/partner/update/${partnerId}`,
           values,
           { headers: { 'x-auth-token': token } }
         );
@@ -101,7 +101,7 @@ const PartnerForm = () => {
   const fetchPartnerDetails = async (id, token) => {
     try {
       console.log('Fetching partner details for ID:', id);
-      const response = await axios.get(`http://localhost:5000/partner/getbyid/${id}`, {
+      const response = await axios.get(`/partner/getbyid/${id}`, {
         headers: { 'x-auth-token': token }
       });
       console.log('Partner details response:', response.data);

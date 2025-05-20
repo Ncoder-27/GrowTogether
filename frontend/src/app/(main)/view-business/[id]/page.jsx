@@ -16,7 +16,7 @@ const ViewBusiness = () => {
 
   const fetchBusinessDetails = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/business/getbyid/${id}`);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/business/getbyid/${id}`);
       setBusinessData(res.data.data); // Update to use res.data.data
     } catch (error) {
       console.error('Error fetching business details:', error);

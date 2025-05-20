@@ -15,7 +15,7 @@ const ViewPartner = () => {
 
   const fetchPartnerDetails = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/partner/getbyid/${id}`);
+      const res = await axios.get(`/partner/getbyid/${id}`);
       console.log(res.data.data);
       setPartnerData(res.data.data);
     } catch (error) {

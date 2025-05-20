@@ -9,7 +9,7 @@ const ManageBusiness = () => {
 
     const fetchBusinessData = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/business/getall');
+            const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/business/getall');
             setBusinesses(res.data);
             setLoading(false);
         } catch (error) {
@@ -22,7 +22,7 @@ const ManageBusiness = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this business?')) {
             try {
-                await axios.delete(`http://localhost:5000/business/delete/${id}`);
+                await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/business/delete/${id}`);
                 toast.success('Business deleted successfully');
                 fetchBusinessData(); // Refresh the list
             } catch (error) {

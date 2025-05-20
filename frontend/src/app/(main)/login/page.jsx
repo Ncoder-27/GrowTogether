@@ -30,7 +30,7 @@ const SignIn = () => {
       setIsLoading(true);
       try {
         // Try business login first
-        const businessResponse = await axios.post('http://localhost:5000/business/authentication', values);
+        const businessResponse = await axios.post('${process.env.NEXT_PUBLIC_API_URL}/business/authentication', values);
         if (businessResponse.data.token) {
           localStorage.setItem('user-token', businessResponse.data.token);
           localStorage.setItem('user-type', 'business');
@@ -44,7 +44,7 @@ const SignIn = () => {
       } catch (businessError) {
         // If business login fails, try partner login
         try {
-          const partnerResponse = await axios.post('http://localhost:5000/partner/authentication', values);
+          const partnerResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/partner/authentication`, values);
           if (partnerResponse.data.token) {
             localStorage.setItem('user-token', partnerResponse.data.token);
             localStorage.setItem('user-type', 'partner');

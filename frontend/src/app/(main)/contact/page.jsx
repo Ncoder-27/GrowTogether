@@ -20,7 +20,7 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/contact/add', formData);
+      const response = await axios.post('/contact/add', formData);
       if (response.data.message === 'Contact message added successfully') {
         toast.success('Message sent successfully!');
         // Clear form
