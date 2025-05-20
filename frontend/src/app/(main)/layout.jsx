@@ -40,7 +40,6 @@ export default function MainLayout({ children }) {
                 {children}
               </AnimatePresence>
             </main>
-            <Footer />
           </div>
           <Toaster
             position="top-right"
