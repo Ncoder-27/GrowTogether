@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -7,6 +7,19 @@ import { io } from 'socket.io-client';
 import PageTransition from '@/components/PageTransition';
 import FadeIn from '@/components/animations/FadeIn';
 import { useAppContext } from '@/context/appcontext';
+
+// Wrapper component to handle search params
+function ChatPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-white to-orange-50 py-6 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+      </div>
+    }>
+      <ChatPage />
+    </Suspense>
+  );
+}
 
 const ChatPage = () => {
   const { isLoggedIn, userType, userInfo } = useAppContext();
@@ -558,4 +571,4 @@ const ChatPage = () => {
   );
 };
 
-export default ChatPage;
+export default ChatPageWrapper;

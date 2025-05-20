@@ -1,6 +1,7 @@
+'use client'
 import { useState } from 'react';
 import Link from 'next/link';
-import Layout from '../components/layout/Layout';
+// import Layout from '../components/layout/Layout';
 import Head from 'next/head';
 
 export default function ForgotPassword() {
@@ -15,7 +16,8 @@ export default function ForgotPassword() {
   };
 
   return (
-    <Layout>
+  <>
+    {/* <Layout> */}
       <Head>
         <title>Forgot Password | Grow-Together</title>
       </Head>
@@ -104,6 +106,7 @@ export default function ForgotPassword() {
           </div>
         </div>
       </div>
-    </Layout>
+    {/* </Layout> */}
+  </>
   );
 } 
