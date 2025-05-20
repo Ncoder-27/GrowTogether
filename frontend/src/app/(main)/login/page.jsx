@@ -30,7 +30,7 @@ const SignIn = () => {
       setIsLoading(true);
       try {
         // Try business login first
-        const businessResponse = await axios.post('${process.env.NEXT_PUBLIC_API_URL}/business/authentication', values);
+        const businessResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/business/authentication`, values);
         if (businessResponse.data.token) {
           localStorage.setItem('user-token', businessResponse.data.token);
           localStorage.setItem('user-type', 'business');
